@@ -8,6 +8,13 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+## v3.13.1 - 2026-02-28
+
+### Bug Fixes
+
+- QueryVariables derive will not show errors from missing_docs lint
+  ([#1201](https://codeberg.org/obmarg/cynic/pulls/1201))
+
 ## v3.13.0 - 2026-02-27
 
 Note that this is the last release that will be pushed to github - development
