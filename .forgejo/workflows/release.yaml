@@ -25,10 +25,7 @@ jobs:
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
 
       - name: Install jq
-        run: |
-          wget https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64 -O $HOME/bin/jq
-          chmod +x $HOME/bin/jq
-          echo "/$HOME/bin" >> $GITHUB_PATH
+        run: sudo apt-get update && sudo apt-get install jq --no-install-recommends
 
       - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
         with:
