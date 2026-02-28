@@ -25,7 +25,7 @@ jobs:
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
 
       - name: Install jq
-        run: sudo apt-get update && sudo apt-get install jq --no-install-recommends
+        run: apt-get update && apt-get install jq --no-install-recommends
 
       - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
         with:
