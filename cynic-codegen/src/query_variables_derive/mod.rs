@@ -127,10 +127,13 @@ pub fn query_variables_derive_impl(
 
     let ident_span = ident.span();
     let fields_struct = quote_spanned! { ident_span =>
+        /// `cynic::QueryVariablesFields` implementation for `#ident`
         #vis struct #fields_struct_ident;
 
+        #[automatically_derived]
         impl cynic::QueryVariablesFields for #fields_struct_ident {}
 
+        #[automatically_derived]
         impl cynic::queries::VariableMatch<#fields_struct_ident> for #fields_struct_ident {}
 
         const _: () = {
@@ -138,6 +141,7 @@ pub fn query_variables_derive_impl(
                 #field_output_types
             )*
 
+            #[doc(hidden)]
             impl #fields_struct_ident {
                 #(
                     #field_funcs

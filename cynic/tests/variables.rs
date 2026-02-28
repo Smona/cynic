@@ -1,7 +1,11 @@
+//! Some tests of variables
+#![deny(missing_docs)] // Testing that QueryVariables derives don't cause missing doc warnings
+
 use serde_json::json;
 
 #[derive(cynic::QueryVariables, cynic::QueryVariableLiterals)]
-struct TestArgs<'a> {
+/// Arguments for this test module
+pub struct TestArgs<'a> {
     #[cynic(skip_serializing_if = "Option::is_none")]
     a_str: Option<&'a str>,
 }
