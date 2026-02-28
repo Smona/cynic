@@ -68,21 +68,21 @@ Arguments:
 Options:
   -H, --header <HEADERS>
           Any headers to send with the introspection request
-
+          
           These should be in HTTP format e.g. `-H "Authorization: Bearer a_token_123"`
 
   -o, --output <OUTPUT>
           The name of a file we should output the schema into.
-
+          
           By default we print to stdout.
 
       --server-version <SERVER_VERSION>
           The version of the GraphQL specificaiton that the remote GraphQL server implements
-
+          
           Different versions of GraphQL expose different fields via introspection, so we need to know which set of fields to ask for.
-
+          
           By default we run an additional query to figure out what the server we're talking to supports.
-
+          
           [default: auto]
 
           Possible values:
