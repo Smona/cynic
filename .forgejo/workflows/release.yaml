@@ -21,14 +21,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
+
+      - name: Install jq
+        run: |
+          wget https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64 -O $HOME/bin/jq
+          chmod +x $HOME/bin/jq
+          echo "/$HOME/bin" >> $GITHUB_PATH
+
       - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
         with:
           version: 1.17.6
+
       - name: Run release-plz
         uses: https://github.com/obmarg/release-plz-action@support-codeberg
         with:
           command: release-pr
+          forge: "gitea"
           repository_url: https://codeberg.org/obmarg/cynic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
