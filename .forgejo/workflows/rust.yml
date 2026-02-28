@@ -2,7 +2,7 @@ name: Build & Test Rust
 
 on:
   push:
-    branches: [main, staging, trying]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -17,34 +17,27 @@ env:
 
 jobs:
   check-format:
-    # Skip draft release PRs
-    if: ${{ github.actor_id != '166170668' || github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-
-    runs-on: ubuntu-latest
+    runs-on: debian-trixie
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
         with:
           components: rustfmt
       - name: Check format
         run: cargo fmt --all --check
 
   build-rust:
-    # Skip draft release PRs
-    if: ${{ github.actor_id != '166170668' || github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-
-    runs-on: ubuntu-latest
-
+    runs-on: debian-trixie
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
         with:
           components: rustfmt
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: https://github.com/Swatinem/rust-cache@v2
 
       - name: Build cynic
         run: cargo build --workspace --all-features
@@ -52,7 +45,7 @@ jobs:
       - name: Install nextest
         shell: bash
         run: |
-          curl -LsSf https://get.nexte.st/0.9/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+          curl -LsSf https://get.nexte.st/0.9/linux-arm | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
 
       - name: Build tests
         shell: bash
