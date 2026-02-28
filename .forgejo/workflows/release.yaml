@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
       - name: Run release-plz
-        uses: https://githhub.com/obmarg/release-plz-action@support-codeberg
+        uses: https://github.com/obmarg/release-plz-action@support-codeberg
         with:
           command: release-pr
         env:
