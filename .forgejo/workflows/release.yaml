@@ -29,5 +29,6 @@ jobs:
         uses: https://github.com/obmarg/release-plz-action@support-codeberg
         with:
           command: release-pr
+          repository_url: https://codeberg.org/obmarg/cynic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
