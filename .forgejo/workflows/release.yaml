@@ -22,6 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set git identity
+        run: |
+          git config --global user.email "cynic-releases@grambo.me.uk"
+          git config --global user.name "Cynic Release Bot"
+
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
 
       - name: Install jq
