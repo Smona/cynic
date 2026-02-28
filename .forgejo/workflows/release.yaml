@@ -31,11 +31,14 @@ jobs:
         with:
           version: 1.17.6
 
+      - name: Install cargo-semver-checks
+        run: cargo binstall cargo-semver-checks
+
       - name: Run release-plz
         uses: https://github.com/obmarg/release-plz-action@support-codeberg
         with:
           command: release-pr
           forge: "gitea"
-          repository_url: https://codeberg.org/obmarg/cynic
+          repository_url: https://codeberg.org/${FORGEJO_REPOSITORY}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
