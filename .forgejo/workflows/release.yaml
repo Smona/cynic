@@ -10,6 +10,7 @@ jobs:
   release-plz-pr:
     name: Release-plz PR
     runs-on: debian-trixie
+    if: ${{ github.repository_owner == 'obmarg' }}
     permissions:
       contents: write
       pull-requests: write
@@ -21,6 +22,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
+      - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
+        with:
+          version: 1.17.6
       - name: Run release-plz
         uses: https://github.com/obmarg/release-plz-action@support-codeberg
         with:
