@@ -29,9 +29,6 @@ jobs:
 
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
 
-      - name: Install jq
-        run: apt-get update && apt-get install jq --yes --no-install-recommends
-
       - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
         with:
           version: 1.17.6
@@ -39,11 +36,19 @@ jobs:
       - name: Install cargo-semver-checks
         run: cargo binstall cargo-semver-checks
 
+      - name: Install release-plz
+        shell: bash
+        run: |
+          cargo-binstall \
+            release-plz@0.3.156\
+            --force\
+            --strategies=crate-meta-data,compile\
+            --no-confirm
+
       - name: Run release-plz
-        uses: https://github.com/obmarg/release-plz-action@support-codeberg
-        with:
-          command: release-pr
-          forge: "gitea"
-          repository_url: https://codeberg.org/${FORGEJO_REPOSITORY}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          release-plz release-pr \
+            --git-token ${GITHUB_TOKEN} \
+            --repo-url https://codeberg.org/${FORGEJO_REPOSITORY} \
+            --forge gitea
