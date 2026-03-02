@@ -20,8 +20,6 @@ jobs:
     runs-on: debian-trixie
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
         with:
           components: rustfmt

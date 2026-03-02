@@ -1,0 +1,42 @@
+name: Publish Docs Website
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  publish-docs:
+    runs-on: debian-trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
+        with:
+          components: rustfmt
+          
+      - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
+        with:
+          version: 1.17.6
+
+      - name: Install mdbook
+        working-directory: cynic-book
+        run: |
+          wget https://github.com/rust-lang/mdBook/releases/download/v0.4.52/mdbook-v0.4.52-aarch64-unknown-linux-musl.tar.gz
+          tar xvzf mdbook-v0.4.52-aarch64-unknown-linux-musl.tar.gz
+
+      - name: Install mdbook-linkcheck
+        run: cargo binstall mdbook-linkcheck@0.7.7
+
+      - name: Build book
+        working-directory: cynic-book
+        run: |
+          ./mdbook build
+
+      - uses: actions/git-pages@v2
+        with:
+          site: http://cynic-rs.dev
+          server: grebedoc.dev
+          password: ${{ secrets.CYNIC_RS_PASSWORD }}
+          source: cynic-book/book/html
+
