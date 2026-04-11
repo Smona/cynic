@@ -46,6 +46,63 @@ impl Definition<'_> {
     }
 }
 
+impl<'a> Definition<'a> {
+    pub fn is_schema(&self) -> bool {
+        matches!(self, Definition::Schema(_))
+    }
+
+    pub fn as_schema(self) -> Option<SchemaDefinition<'a>> {
+        match self {
+            Self::Schema(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_schema_extension(&self) -> bool {
+        matches!(self, Definition::SchemaExtension(_))
+    }
+
+    pub fn as_schema_extension(self) -> Option<SchemaDefinition<'a>> {
+        match self {
+            Self::SchemaExtension(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_type(&self) -> bool {
+        matches!(self, Definition::Type(_))
+    }
+
+    pub fn as_type(self) -> Option<TypeDefinition<'a>> {
+        match self {
+            Self::Type(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_type_extension(&self) -> bool {
+        matches!(self, Definition::TypeExtension(_))
+    }
+
+    pub fn as_type_extension(self) -> Option<TypeDefinition<'a>> {
+        match self {
+            Self::TypeExtension(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_directive(&self) -> bool {
+        matches!(self, Definition::Directive(_))
+    }
+
+    pub fn as_directive(self) -> Option<DirectiveDefinition<'a>> {
+        match self {
+            Self::Directive(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum TypeDefinition<'a> {
     Scalar(ScalarDefinition<'a>),
