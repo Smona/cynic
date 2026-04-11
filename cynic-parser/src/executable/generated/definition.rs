@@ -19,6 +19,30 @@ pub enum ExecutableDefinition<'a> {
     Fragment(FragmentDefinition<'a>),
 }
 
+impl<'a> ExecutableDefinition<'a> {
+    pub fn is_operation(&self) -> bool {
+        matches!(self, ExecutableDefinition::Operation(_))
+    }
+
+    pub fn as_operation(self) -> Option<OperationDefinition<'a>> {
+        match self {
+            Self::Operation(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_fragment(&self) -> bool {
+        matches!(self, ExecutableDefinition::Fragment(_))
+    }
+
+    pub fn as_fragment(self) -> Option<FragmentDefinition<'a>> {
+        match self {
+            Self::Fragment(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 impl ExecutableId for ExecutableDefinitionId {
     type Reader<'a> = ExecutableDefinition<'a>;
     fn read(self, document: &ExecutableDocument) -> Self::Reader<'_> {
