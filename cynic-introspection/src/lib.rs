@@ -47,17 +47,23 @@
 //! a different version of the query using [InstrospectionQuery::with_capabilities]:
 //!
 //! ```rust
-//! use cynic::http::ReqwestBlockingExt;
+//! use cynic::http::ReqwestExt;
 //! use cynic_introspection::{IntrospectionQuery, SpecificationVersion};
+//! # #[tokio::main]
+//! # async fn main() {
+//! # let server = graphql_mocks::mocks::swapi::serve().await;
+//! # let url = server.url();
+//! # let url = url.as_ref();
 //!
 //! // We can run an introspection query and unwrap the data contained within
-//! let introspection_data = reqwest::blocking::Client::new()
-//!     .post("https://spacex-production.up.railway.app/")
+//! let introspection_data = reqwest::Client::new()
+//!     .post(url)
 //!     .run_graphql(
 //!         IntrospectionQuery::with_capabilities(
 //!             SpecificationVersion::October2021.capabilities()
 //!         )
 //!     )
+//!     .await
 //!     .unwrap()
 //!     .data
 //!     .unwrap();
@@ -65,7 +71,8 @@
 //! // And then convert it into a schema for easier use.
 //! let schema = introspection_data.into_schema().unwrap();
 //!
-//! assert_eq!(schema.query_type, "Query");
+//! assert_eq!(schema.query_type, "Root");
+//! # }
 //! ```
 //!
 //! ### Detecting Capabilities

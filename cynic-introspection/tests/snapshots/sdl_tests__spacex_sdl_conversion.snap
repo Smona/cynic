@@ -49,11 +49,6 @@ type Core {
   water_landing: Boolean
 }
 
-type CoreMission {
-  flight: Int
-  name: String
-}
-
 input CoresFind {
   asds_attempts: Int
   asds_landings: Int
@@ -436,8 +431,6 @@ type Mutation {
     where: users_bool_exp!
   ): users_mutation_response
 }
-
-scalar ObjectID
 
 type Payload {
   customers: [String]
@@ -851,18 +844,8 @@ type Volume {
   cubic_meters: Int
 }
 
-"""
-conflict action
-"""
-enum conflict_action {
-  """
-  ignore the insert on this row
-  """
-  ignore
-  """
-  update the row with the given values
-  """
-  update
+type _Service {
+  sdl: String
 }
 
 """
@@ -941,23 +924,6 @@ type users_aggregate_fields {
 }
 
 """
-order by aggregate values of table "users"
-"""
-input users_aggregate_order_by {
-  count: order_by
-  max: users_max_order_by
-  min: users_min_order_by
-}
-
-"""
-input type for inserting array relation for remote table "users"
-"""
-input users_arr_rel_insert_input {
-  data: [users_insert_input!]!
-  on_conflict: users_on_conflict
-}
-
-"""
 Boolean expression to filter rows from the table "users". All fields are combined with a logical 'AND'.
 """
 input users_bool_exp {
@@ -1005,16 +971,6 @@ type users_max_fields {
 }
 
 """
-order by max() on columns of table "users"
-"""
-input users_max_order_by {
-  name: order_by
-  rocket: order_by
-  timestamp: order_by
-  twitter: order_by
-}
-
-"""
 aggregate min on columns
 """
 type users_min_fields {
@@ -1022,16 +978,6 @@ type users_min_fields {
   rocket: String
   timestamp: timestamptz
   twitter: String
-}
-
-"""
-order by min() on columns of table "users"
-"""
-input users_min_order_by {
-  name: order_by
-  rocket: order_by
-  timestamp: order_by
-  twitter: order_by
 }
 
 """
@@ -1046,14 +992,6 @@ type users_mutation_response {
   data of the affected rows by the mutation
   """
   returning: [users!]!
-}
-
-"""
-input type for inserting object relation for remote table "users"
-"""
-input users_obj_rel_insert_input {
-  data: users_insert_input!
-  on_conflict: users_on_conflict
 }
 
 """
@@ -1126,63 +1064,3 @@ input uuid_comparison_exp {
   _neq: uuid
   _nin: [uuid!]
 }
-
-enum link__Purpose {
-  """
-  `SECURITY` features provide metadata necessary to securely resolve fields.
-  """
-  SECURITY
-  """
-  `EXECUTION` features provide metadata necessary for operation execution.
-  """
-  EXECUTION
-}
-
-scalar link__Import
-
-scalar federation__FieldSet
-
-scalar _Any
-
-type _Service {
-  sdl: String
-}
-
-directive @contact(
-  """
-  Contact title of the subgraph owner
-  """
-  name: String!
-  """
-  URL where the subgraph's owner can be reached
-  """
-  url: String
-  """
-  Other relevant notes can be included here; supports markdown links
-  """
-  description: String
-) on SCHEMA
-
-directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
-
-directive @key(fields: federation__FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE
-
-directive @federation__requires(fields: federation__FieldSet!) on FIELD_DEFINITION
-
-directive @federation__provides(fields: federation__FieldSet!) on FIELD_DEFINITION
-
-directive @federation__external(reason: String) on OBJECT | FIELD_DEFINITION
-
-directive @federation__tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION | SCHEMA
-
-directive @federation__extends on OBJECT | INTERFACE
-
-directive @federation__shareable repeatable on OBJECT | FIELD_DEFINITION
-
-directive @federation__inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-
-directive @federation__override(from: String!) on FIELD_DEFINITION
-
-directive @federation__composeDirective(name: String) repeatable on SCHEMA
-
-directive @federation__interfaceObject on OBJECT

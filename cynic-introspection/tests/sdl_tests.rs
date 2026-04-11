@@ -22,16 +22,17 @@ async fn test_starwars_sdl_conversion() {
     insta::assert_snapshot!(result.data.unwrap().into_schema().unwrap().to_sdl());
 }
 
-#[test]
-fn test_spacex_sdl_conversion() {
-    use cynic::http::ReqwestBlockingExt;
+#[tokio::test]
+async fn test_spacex_sdl_conversion() {
+    let mock_server = mocks::spacex::serve().await;
 
     let query =
         IntrospectionQuery::with_capabilities(SpecificationVersion::October2021.capabilities());
 
-    let result = reqwest::blocking::Client::new()
-        .post("https://spacex-production.up.railway.app/")
+    let result = reqwest::Client::new()
+        .post(mock_server.url())
         .run_graphql(query)
+        .await
         .unwrap();
 
     if result.errors.is_some() {
