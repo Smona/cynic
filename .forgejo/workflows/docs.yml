@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/git-pages@v2
         with:
-          site: http://cynic-rs.dev
+          site: https://cynic-rs.dev
           server: grebedoc.dev
           password: ${{ secrets.CYNIC_RS_PASSWORD }}
           source: cynic-book/book/html

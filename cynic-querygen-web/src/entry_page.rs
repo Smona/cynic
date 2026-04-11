@@ -73,11 +73,7 @@ fn entry_page_view(model: &Model) -> Node<Msg> {
                         C!["pt-2"],
                         li![
                             C!["pb-1"],
-                            "For v1 please visit ",
-                            a![
-                                attrs! {At::Href => "https://v1.generator.cynic-rs.dev/"},
-                                "https://v1.generator.cynic-rs.dev/"
-                            ]
+                            "The v1 generator is no longer hosted anywhere.  Would recommend building from source",
                         ],
                         li![
                             "For v2 please visit ",
