@@ -8,6 +8,13 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+## v3.13.2 - 2026-04-11
+
+### Bug Fixes
+
+- Fixed a possible panic when reading schemas or queries with short block
+  strings.
+
 ## v3.13.1 - 2026-02-28
 
 ### Bug Fixes

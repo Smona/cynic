@@ -9,6 +9,18 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+## v0.11.1 - 2026-04-11
+
+### New Features
+
+- Added `is_*` and `as_*` functions to ExecutableDefinition ([#1211](https://codeberg.org/obmarg/cynic/pulls/1211))
+- Added `is_*` and `as_*` functions to TypeSystemDefinition ([#1210](https://codeberg.org/obmarg/cynic/pulls/1210))
+
+### Bug Fixes
+
+- Fixed a panic when parsing short block string values ([#1209](https://codeberg.org/obmarg/cynic/pulls/1209))
+- Fixed a panic when using short doc strings ([#1209](https://codeberg.org/obmarg/cynic/pulls/1209))
+
 ## v0.11.0 - 2026-02-27
 
 ### New Features
