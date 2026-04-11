@@ -6,6 +6,11 @@ fn test_argument_default_value_formatting() {
 }
 
 #[test]
+fn block_string_literal() {
+    double_roundtrip_test("tests/sdl/block_string_literal.graphql");
+}
+
+#[test]
 fn test_enum() {
     roundtrip_test("tests/sdl/enum.graphql");
 }

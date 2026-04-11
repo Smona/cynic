@@ -3,6 +3,12 @@ use std::path::PathBuf;
 use similar_asserts::assert_eq;
 
 #[test]
+fn block_string_literal() {
+    double_roundtrip_test("tests/executables/block_string_literal.graphql");
+    display_test("tests/executables/block_string_literal.graphql");
+}
+
+#[test]
 fn descriptions() {
     roundtrip_test("tests/executables/descriptions.graphql");
     display_test("tests/executables/descriptions.graphql");

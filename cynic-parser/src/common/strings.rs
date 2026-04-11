@@ -35,7 +35,7 @@ pub(crate) fn trim_block_string_whitespace(src: &str) -> String {
         return "".to_string();
     };
 
-    let mut result = String::with_capacity(src.len() - 6);
+    let mut result = String::with_capacity(src.len());
     let mut lines = lines
         .into_iter()
         .enumerate()

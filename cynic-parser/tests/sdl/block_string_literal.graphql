@@ -1,0 +1,5 @@
+type Query {
+  user(
+    name: String = """Do"""
+  ): String
+}
