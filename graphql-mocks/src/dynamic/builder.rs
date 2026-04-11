@@ -4,24 +4,30 @@ use std::collections::HashMap;
 
 use async_graphql::dynamic::{FieldValue, ResolverContext};
 use cynic_parser::{common::WrappingType, type_system as parser};
+use futures_lite::{StreamExt, stream};
 use serde::Deserialize;
 
-use crate::{MockGraphQlServer, MockGraphQlServerBuilder};
+use crate::{
+    MockGraphQlServer, MockGraphQlServerBuilder, dynamic::resolvers::SubscriptionResolver,
+};
 
 use super::{DynamicSchema, resolvers::Resolver};
 
 pub struct DynamicSchemaBuilder {
     sdl: String,
     field_resolvers: ResolverMap,
+    subscription_resolvers: SubscriptionResolverMap,
 }
 
 type ResolverMap = HashMap<(String, String), Box<dyn Resolver>>;
+type SubscriptionResolverMap = HashMap<(String, String), Box<dyn SubscriptionResolver>>;
 
 impl DynamicSchemaBuilder {
     pub fn new(sdl: &str) -> Self {
         DynamicSchemaBuilder {
             sdl: sdl.into(),
             field_resolvers: Default::default(),
+            subscription_resolvers: Default::default(),
         }
     }
 
@@ -36,10 +42,22 @@ impl DynamicSchemaBuilder {
         self
     }
 
+    pub fn with_subscription_resolver(
+        mut self,
+        ty: &str,
+        field: &str,
+        resolver: impl SubscriptionResolver + 'static,
+    ) -> Self {
+        self.subscription_resolvers
+            .insert((ty.into(), field.into()), Box::new(resolver));
+        self
+    }
+
     pub fn into_server_builder(self) -> MockGraphQlServerBuilder {
         let Self {
             sdl,
             mut field_resolvers,
+            mut subscription_resolvers,
         } = self;
 
         let schema = cynic_parser::parse_type_system_document(&sdl)
@@ -47,9 +65,16 @@ impl DynamicSchemaBuilder {
             .expect("a valid document");
 
         let mut builder = schema_builder(&schema);
+        let (_, _, subscription_root) = root_types(&schema);
 
         for definition in schema.definitions() {
             match definition {
+                parser::Definition::Type(parser::TypeDefinition::Object(object))
+                    if subscription_root == Some(object.name()) =>
+                {
+                    builder =
+                        builder.register(convert_subscription(object, &mut subscription_resolvers));
+                }
                 parser::Definition::Type(def) => {
                     builder = builder.register(convert_type(def, &mut field_resolvers));
                 }
@@ -130,6 +155,53 @@ fn convert_object(
     }
 
     object.into()
+}
+
+fn convert_subscription(
+    def: parser::ObjectDefinition<'_>,
+    resolvers: &mut SubscriptionResolverMap,
+) -> async_graphql::dynamic::Type {
+    use async_graphql::dynamic::*;
+
+    let mut subscription = Subscription::new(def.name());
+
+    if let Some(description) = def.description() {
+        subscription = subscription.description(description.to_cow());
+    }
+
+    for field_def in def.fields() {
+        let type_ref = convert_type_ref(field_def.ty());
+        let resolver = std::sync::Mutex::new(
+            resolvers
+                .remove(&(def.name().into(), field_def.name().into()))
+                .unwrap_or_else(|| Box::new(default_subscription_resolver())),
+        );
+
+        let mut field = SubscriptionField::new(field_def.name(), type_ref, move |context| {
+            let mut resolver = resolver.lock().expect("mutex to be unpoisoned");
+            let stream = resolver.resolve(context).map(|value| {
+                let value = async_graphql::Value::deserialize(value).unwrap();
+                Ok(transform_into_field_value(value))
+            });
+            SubscriptionFieldFuture::new(async move { Ok(stream) })
+        });
+
+        if let Some(description) = field_def.description() {
+            field = field.description(description.to_cow());
+        }
+
+        for argument in field_def.arguments() {
+            field = field.argument(convert_input_value(argument));
+        }
+
+        if let Some(reason) = field_def.directives().find_map(DirectiveExt::to_deprecated) {
+            field = field.deprecation(reason);
+        }
+
+        subscription = subscription.field(field);
+    }
+
+    subscription.into()
 }
 
 fn transform_into_field_value(mut value: async_graphql::Value) -> FieldValue<'static> {
@@ -317,6 +389,7 @@ fn root_types(schema: &cynic_parser::TypeSystemDocument) -> (&str, Option<&str>,
     let mut subscription_present = false;
     for definition in schema.definitions() {
         if let Definition::Schema(_) = definition {
+            eprintln!("found schema");
             found_schema_def = true;
         }
         match definition {
@@ -332,6 +405,7 @@ fn root_types(schema: &cynic_parser::TypeSystemDocument) -> (&str, Option<&str>,
                 }
             }
             Definition::Type(ty) | Definition::TypeExtension(ty) if ty.name() == "Mutation" => {
+                eprintln!("mutation prsent");
                 mutation_present = true
             }
             Definition::Type(ty) | Definition::TypeExtension(ty) if ty.name() == "Subscription" => {
@@ -345,7 +419,7 @@ fn root_types(schema: &cynic_parser::TypeSystemDocument) -> (&str, Option<&str>,
             mutation_name = Some("Mutation");
         }
         if subscription_present {
-            mutation_name = Some("Subscription");
+            subscription_name = Some("Subscription");
         }
     }
 
@@ -365,6 +439,13 @@ fn default_field_resolver(field_name: &str) -> impl Resolver + 'static {
             };
         }
         panic!("Unexpected parent value for tests",)
+    }
+}
+
+fn default_subscription_resolver() -> impl SubscriptionResolver + 'static {
+    move |_context: ResolverContext<'_>| {
+        let x: stream::Boxed<serde_json::Value> = Box::pin(stream::empty::<serde_json::Value>());
+        x
     }
 }
 

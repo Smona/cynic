@@ -6,9 +6,11 @@ snapshot_kind: text
 Schema {
     query_type: "Query",
     mutation_type: Some(
+        "Mutation",
+    ),
+    subscription_type: Some(
         "Subscription",
     ),
-    subscription_type: None,
     types: [
         Object(
             ObjectType {
@@ -3145,6 +3147,114 @@ Schema {
                     },
                 ],
                 is_one_of: false,
+            },
+        ),
+        Object(
+            ObjectType {
+                name: "Mutation",
+                description: None,
+                fields: [
+                    Field {
+                        name: "delete_users",
+                        description: Some(
+                            "delete data from the table: \"users\"",
+                        ),
+                        args: [
+                            InputValue {
+                                name: "where",
+                                description: Some(
+                                    "filter the rows which have to be deleted",
+                                ),
+                                ty: FieldType {
+                                    wrapping: [NonNull],
+                                    name: "users_bool_exp",
+                                },
+                                default_value: None,
+                                deprecated: No,
+                            },
+                        ],
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "users_mutation_response",
+                        },
+                        deprecated: No,
+                    },
+                    Field {
+                        name: "insert_users",
+                        description: Some(
+                            "insert data into the table: \"users\"",
+                        ),
+                        args: [
+                            InputValue {
+                                name: "objects",
+                                description: Some(
+                                    "the rows to be inserted",
+                                ),
+                                ty: FieldType {
+                                    wrapping: [NonNull, List, NonNull],
+                                    name: "users_insert_input",
+                                },
+                                default_value: None,
+                                deprecated: No,
+                            },
+                            InputValue {
+                                name: "on_conflict",
+                                description: Some(
+                                    "on conflict condition",
+                                ),
+                                ty: FieldType {
+                                    wrapping: [],
+                                    name: "users_on_conflict",
+                                },
+                                default_value: None,
+                                deprecated: No,
+                            },
+                        ],
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "users_mutation_response",
+                        },
+                        deprecated: No,
+                    },
+                    Field {
+                        name: "update_users",
+                        description: Some(
+                            "update data of the table: \"users\"",
+                        ),
+                        args: [
+                            InputValue {
+                                name: "_set",
+                                description: Some(
+                                    "sets the columns of the filtered rows to the given values",
+                                ),
+                                ty: FieldType {
+                                    wrapping: [],
+                                    name: "users_set_input",
+                                },
+                                default_value: None,
+                                deprecated: No,
+                            },
+                            InputValue {
+                                name: "where",
+                                description: Some(
+                                    "filter the rows which have to be updated",
+                                ),
+                                ty: FieldType {
+                                    wrapping: [NonNull],
+                                    name: "users_bool_exp",
+                                },
+                                default_value: None,
+                                deprecated: No,
+                            },
+                        ],
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "users_mutation_response",
+                        },
+                        deprecated: No,
+                    },
+                ],
+                interfaces: [],
             },
         ),
         Object(
@@ -8195,6 +8305,107 @@ Schema {
                 is_one_of: false,
             },
         ),
+        Enum(
+            EnumType {
+                name: "users_constraint",
+                description: Some(
+                    "unique or primary key constraints on table \"users\"",
+                ),
+                values: [
+                    EnumValue {
+                        name: "unique",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "or",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "primary",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "key",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "constraint",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "users_pkey",
+                        description: None,
+                        deprecated: No,
+                    },
+                ],
+            },
+        ),
+        InputObject(
+            InputObjectType {
+                name: "users_insert_input",
+                description: Some(
+                    "input type for inserting data into table \"users\"",
+                ),
+                fields: [
+                    InputValue {
+                        name: "id",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "uuid",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "name",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "rocket",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "timestamp",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "timestamptz",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "twitter",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                ],
+                is_one_of: false,
+            },
+        ),
         Object(
             ObjectType {
                 name: "users_max_fields",
@@ -8297,6 +8508,72 @@ Schema {
                 interfaces: [],
             },
         ),
+        Object(
+            ObjectType {
+                name: "users_mutation_response",
+                description: Some(
+                    "response of any mutation on the table \"users\"",
+                ),
+                fields: [
+                    Field {
+                        name: "affected_rows",
+                        description: Some(
+                            "number of affected rows by the mutation",
+                        ),
+                        args: [],
+                        ty: FieldType {
+                            wrapping: [NonNull],
+                            name: "Int",
+                        },
+                        deprecated: No,
+                    },
+                    Field {
+                        name: "returning",
+                        description: Some(
+                            "data of the affected rows by the mutation",
+                        ),
+                        args: [],
+                        ty: FieldType {
+                            wrapping: [NonNull, List, NonNull],
+                            name: "users",
+                        },
+                        deprecated: No,
+                    },
+                ],
+                interfaces: [],
+            },
+        ),
+        InputObject(
+            InputObjectType {
+                name: "users_on_conflict",
+                description: Some(
+                    "on conflict condition type for table \"users\"",
+                ),
+                fields: [
+                    InputValue {
+                        name: "constraint",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [NonNull],
+                            name: "users_constraint",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "update_columns",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [NonNull, List, NonNull],
+                            name: "users_update_column",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                ],
+                is_one_of: false,
+            },
+        ),
         InputObject(
             InputObjectType {
                 name: "users_order_by",
@@ -8363,6 +8640,107 @@ Schema {
                 name: "users_select_column",
                 description: Some(
                     "select columns of table \"users\"",
+                ),
+                values: [
+                    EnumValue {
+                        name: "column",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "name",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "id",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "rocket",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "timestamp",
+                        description: None,
+                        deprecated: No,
+                    },
+                    EnumValue {
+                        name: "twitter",
+                        description: None,
+                        deprecated: No,
+                    },
+                ],
+            },
+        ),
+        InputObject(
+            InputObjectType {
+                name: "users_set_input",
+                description: Some(
+                    "input type for updating data in table \"users\"",
+                ),
+                fields: [
+                    InputValue {
+                        name: "id",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "uuid",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "name",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "rocket",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "timestamp",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "timestamptz",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                    InputValue {
+                        name: "twitter",
+                        description: None,
+                        ty: FieldType {
+                            wrapping: [],
+                            name: "String",
+                        },
+                        default_value: None,
+                        deprecated: No,
+                    },
+                ],
+                is_one_of: false,
+            },
+        ),
+        Enum(
+            EnumType {
+                name: "users_update_column",
+                description: Some(
+                    "update columns of table \"users\"",
                 ),
                 values: [
                     EnumValue {

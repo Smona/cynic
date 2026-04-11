@@ -15,11 +15,17 @@ Some(
                 mutation_type: Some(
                     NamedType {
                         name: Some(
+                            "Mutation",
+                        ),
+                    },
+                ),
+                subscription_type: Some(
+                    NamedType {
+                        name: Some(
                             "Subscription",
                         ),
                     },
                 ),
-                subscription_type: None,
                 types: [
                     Type {
                         kind: Object,
@@ -4740,6 +4746,186 @@ Some(
                             ],
                         ),
                         interfaces: None,
+                        enum_values: None,
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
+                        kind: Object,
+                        name: Some(
+                            "Mutation",
+                        ),
+                        description: None,
+                        fields: Some(
+                            [
+                                Field {
+                                    name: "delete_users",
+                                    description: Some(
+                                        "delete data from the table: \"users\"",
+                                    ),
+                                    args: [
+                                        InputValue {
+                                            name: "where",
+                                            description: Some(
+                                                "filter the rows which have to be deleted",
+                                            ),
+                                            ty: FieldType {
+                                                kind: NonNull,
+                                                name: None,
+                                                of_type: Some(
+                                                    FieldType {
+                                                        kind: InputObject,
+                                                        name: Some(
+                                                            "users_bool_exp",
+                                                        ),
+                                                        of_type: None,
+                                                    },
+                                                ),
+                                            },
+                                            default_value: None,
+                                            is_deprecated: false,
+                                            deprecation_reason: None,
+                                        },
+                                    ],
+                                    ty: FieldType {
+                                        kind: Object,
+                                        name: Some(
+                                            "users_mutation_response",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                Field {
+                                    name: "insert_users",
+                                    description: Some(
+                                        "insert data into the table: \"users\"",
+                                    ),
+                                    args: [
+                                        InputValue {
+                                            name: "objects",
+                                            description: Some(
+                                                "the rows to be inserted",
+                                            ),
+                                            ty: FieldType {
+                                                kind: NonNull,
+                                                name: None,
+                                                of_type: Some(
+                                                    FieldType {
+                                                        kind: List,
+                                                        name: None,
+                                                        of_type: Some(
+                                                            FieldType {
+                                                                kind: NonNull,
+                                                                name: None,
+                                                                of_type: Some(
+                                                                    FieldType {
+                                                                        kind: InputObject,
+                                                                        name: Some(
+                                                                            "users_insert_input",
+                                                                        ),
+                                                                        of_type: None,
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                            default_value: None,
+                                            is_deprecated: false,
+                                            deprecation_reason: None,
+                                        },
+                                        InputValue {
+                                            name: "on_conflict",
+                                            description: Some(
+                                                "on conflict condition",
+                                            ),
+                                            ty: FieldType {
+                                                kind: InputObject,
+                                                name: Some(
+                                                    "users_on_conflict",
+                                                ),
+                                                of_type: None,
+                                            },
+                                            default_value: None,
+                                            is_deprecated: false,
+                                            deprecation_reason: None,
+                                        },
+                                    ],
+                                    ty: FieldType {
+                                        kind: Object,
+                                        name: Some(
+                                            "users_mutation_response",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                Field {
+                                    name: "update_users",
+                                    description: Some(
+                                        "update data of the table: \"users\"",
+                                    ),
+                                    args: [
+                                        InputValue {
+                                            name: "_set",
+                                            description: Some(
+                                                "sets the columns of the filtered rows to the given values",
+                                            ),
+                                            ty: FieldType {
+                                                kind: InputObject,
+                                                name: Some(
+                                                    "users_set_input",
+                                                ),
+                                                of_type: None,
+                                            },
+                                            default_value: None,
+                                            is_deprecated: false,
+                                            deprecation_reason: None,
+                                        },
+                                        InputValue {
+                                            name: "where",
+                                            description: Some(
+                                                "filter the rows which have to be updated",
+                                            ),
+                                            ty: FieldType {
+                                                kind: NonNull,
+                                                name: None,
+                                                of_type: Some(
+                                                    FieldType {
+                                                        kind: InputObject,
+                                                        name: Some(
+                                                            "users_bool_exp",
+                                                        ),
+                                                        of_type: None,
+                                                    },
+                                                ),
+                                            },
+                                            default_value: None,
+                                            is_deprecated: false,
+                                            deprecation_reason: None,
+                                        },
+                                    ],
+                                    ty: FieldType {
+                                        kind: Object,
+                                        name: Some(
+                                            "users_mutation_response",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        input_fields: None,
+                        interfaces: Some(
+                            [],
+                        ),
                         enum_values: None,
                         possible_types: None,
                         specified_by_url: None,
@@ -12628,6 +12814,150 @@ Some(
                         is_one_of: None,
                     },
                     Type {
+                        kind: Enum,
+                        name: Some(
+                            "users_constraint",
+                        ),
+                        description: Some(
+                            "unique or primary key constraints on table \"users\"",
+                        ),
+                        fields: None,
+                        input_fields: None,
+                        interfaces: None,
+                        enum_values: Some(
+                            [
+                                EnumValue {
+                                    name: "unique",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "or",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "primary",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "key",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "constraint",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "users_pkey",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
+                        kind: InputObject,
+                        name: Some(
+                            "users_insert_input",
+                        ),
+                        description: Some(
+                            "input type for inserting data into table \"users\"",
+                        ),
+                        fields: None,
+                        input_fields: Some(
+                            [
+                                InputValue {
+                                    name: "id",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "uuid",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "name",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "rocket",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "timestamp",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "timestamptz",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "twitter",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        interfaces: None,
+                        enum_values: None,
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
                         kind: Object,
                         name: Some(
                             "users_max_fields",
@@ -12782,6 +13112,154 @@ Some(
                         is_one_of: None,
                     },
                     Type {
+                        kind: Object,
+                        name: Some(
+                            "users_mutation_response",
+                        ),
+                        description: Some(
+                            "response of any mutation on the table \"users\"",
+                        ),
+                        fields: Some(
+                            [
+                                Field {
+                                    name: "affected_rows",
+                                    description: Some(
+                                        "number of affected rows by the mutation",
+                                    ),
+                                    args: [],
+                                    ty: FieldType {
+                                        kind: NonNull,
+                                        name: None,
+                                        of_type: Some(
+                                            FieldType {
+                                                kind: Scalar,
+                                                name: Some(
+                                                    "Int",
+                                                ),
+                                                of_type: None,
+                                            },
+                                        ),
+                                    },
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                Field {
+                                    name: "returning",
+                                    description: Some(
+                                        "data of the affected rows by the mutation",
+                                    ),
+                                    args: [],
+                                    ty: FieldType {
+                                        kind: NonNull,
+                                        name: None,
+                                        of_type: Some(
+                                            FieldType {
+                                                kind: List,
+                                                name: None,
+                                                of_type: Some(
+                                                    FieldType {
+                                                        kind: NonNull,
+                                                        name: None,
+                                                        of_type: Some(
+                                                            FieldType {
+                                                                kind: Object,
+                                                                name: Some(
+                                                                    "users",
+                                                                ),
+                                                                of_type: None,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        input_fields: None,
+                        interfaces: Some(
+                            [],
+                        ),
+                        enum_values: None,
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
+                        kind: InputObject,
+                        name: Some(
+                            "users_on_conflict",
+                        ),
+                        description: Some(
+                            "on conflict condition type for table \"users\"",
+                        ),
+                        fields: None,
+                        input_fields: Some(
+                            [
+                                InputValue {
+                                    name: "constraint",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: NonNull,
+                                        name: None,
+                                        of_type: Some(
+                                            FieldType {
+                                                kind: Enum,
+                                                name: Some(
+                                                    "users_constraint",
+                                                ),
+                                                of_type: None,
+                                            },
+                                        ),
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "update_columns",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: NonNull,
+                                        name: None,
+                                        of_type: Some(
+                                            FieldType {
+                                                kind: List,
+                                                name: None,
+                                                of_type: Some(
+                                                    FieldType {
+                                                        kind: NonNull,
+                                                        name: None,
+                                                        of_type: Some(
+                                                            FieldType {
+                                                                kind: Enum,
+                                                                name: Some(
+                                                                    "users_update_column",
+                                                                ),
+                                                                of_type: None,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        interfaces: None,
+                        enum_values: None,
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
                         kind: InputObject,
                         name: Some(
                             "users_order_by",
@@ -12877,6 +13355,150 @@ Some(
                         ),
                         description: Some(
                             "select columns of table \"users\"",
+                        ),
+                        fields: None,
+                        input_fields: None,
+                        interfaces: None,
+                        enum_values: Some(
+                            [
+                                EnumValue {
+                                    name: "column",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "name",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "id",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "rocket",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "timestamp",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                EnumValue {
+                                    name: "twitter",
+                                    description: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
+                        kind: InputObject,
+                        name: Some(
+                            "users_set_input",
+                        ),
+                        description: Some(
+                            "input type for updating data in table \"users\"",
+                        ),
+                        fields: None,
+                        input_fields: Some(
+                            [
+                                InputValue {
+                                    name: "id",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "uuid",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "name",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "rocket",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "timestamp",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "timestamptz",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                                InputValue {
+                                    name: "twitter",
+                                    description: None,
+                                    ty: FieldType {
+                                        kind: Scalar,
+                                        name: Some(
+                                            "String",
+                                        ),
+                                        of_type: None,
+                                    },
+                                    default_value: None,
+                                    is_deprecated: false,
+                                    deprecation_reason: None,
+                                },
+                            ],
+                        ),
+                        interfaces: None,
+                        enum_values: None,
+                        possible_types: None,
+                        specified_by_url: None,
+                        is_one_of: None,
+                    },
+                    Type {
+                        kind: Enum,
+                        name: Some(
+                            "users_update_column",
+                        ),
+                        description: Some(
+                            "update columns of table \"users\"",
                         ),
                         fields: None,
                         input_fields: None,
