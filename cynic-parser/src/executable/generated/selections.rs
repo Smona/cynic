@@ -23,6 +23,36 @@ pub enum Selection<'a> {
     FragmentSpread(FragmentSpread<'a>),
 }
 
+impl<'a> Selection<'a> {
+    pub fn is_field(self) -> bool {
+        matches!(self, Self::Field(_))
+    }
+    pub fn is_inline_fragment(self) -> bool {
+        matches!(self, Self::InlineFragment(_))
+    }
+    pub fn is_fragment_spread(self) -> bool {
+        matches!(self, Self::FragmentSpread(_))
+    }
+    pub fn as_field(self) -> Option<FieldSelection<'a>> {
+        match self {
+            Self::Field(inner) => Some(inner),
+            _ => None,
+        }
+    }
+    pub fn as_inline_fragment(self) -> Option<InlineFragment<'a>> {
+        match self {
+            Self::InlineFragment(inner) => Some(inner),
+            _ => None,
+        }
+    }
+    pub fn as_fragment_spread(self) -> Option<FragmentSpread<'a>> {
+        match self {
+            Self::FragmentSpread(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 impl ExecutableId for SelectionId {
     type Reader<'a> = Selection<'a>;
     fn read(self, document: &ExecutableDocument) -> Self::Reader<'_> {

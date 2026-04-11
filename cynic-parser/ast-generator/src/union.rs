@@ -5,9 +5,9 @@ use quote::{quote, TokenStreamExt};
 use cynic_parser::type_system::{TypeDefinition, UnionDefinition};
 
 use crate::{
+    casing::to_snake_case,
     exts::UnionExt,
     file::{EntityOutput, EntityRef},
-    format_code,
     idents::IdIdent,
 };
 
@@ -47,23 +47,35 @@ pub fn union_output(
     let reader_variants = edges.iter().copied().map(ReaderVariant);
     let read_branches = edges.iter().copied().map(ReadImplBranch);
 
-    let record = format_code(quote! {
+    let record = quote! {
         pub enum #record_name {
             #(#record_variants),*
         }
-    })?;
+    };
 
-    let reader = format_code(quote! {
+    let reader = quote! {
         #[derive(Clone, Copy, Debug)]
         pub enum #reader_name<'a> {
             #(#reader_variants),*
         }
-    })?;
+    };
+
+    let reader_helper_fns = {
+        let is_variant_fns = edges.iter().copied().map(IsVariantFn);
+        let as_variant_fns = edges.iter().copied().map(AsVariantFn);
+        quote! {
+            impl<'a> #reader_name<'a> {
+                #(#is_variant_fns)*
+
+                #(#as_variant_fns)*
+            }
+        }
+    };
 
     let id_trait = Ident::new(id_trait, Span::call_site());
     let document_type = Ident::new(document_type, Span::call_site());
 
-    let id_trait_impl = format_code(quote! {
+    let id_trait_impl = quote! {
         impl #id_trait for #id_name {
             type Reader<'a> = #reader_name<'a>;
 
@@ -73,9 +85,9 @@ pub fn union_output(
                 }
             }
         }
-    })?;
+    };
 
-    let id_reader_impl = format_code(quote! {
+    let id_reader_impl = quote! {
         impl IdReader for #reader_name<'_> {
             type Id = #id_name;
             type Reader<'a> = #reader_name<'a>;
@@ -84,13 +96,15 @@ pub fn union_output(
                 document.read(id)
             }
         }
-    })?;
+    };
 
     let contents = indoc::formatdoc!(
         r#"
         {record}
 
         {reader}
+
+        {reader_helper_fns}
 
         {id_trait_impl}
 
@@ -138,6 +152,46 @@ impl quote::ToTokens for ReaderVariant<'_> {
 
         tokens.append_all(quote! {
             #variant_name(#reader<'a>)
+        });
+    }
+}
+
+pub struct IsVariantFn<'a>(TypeEdge<'a>);
+
+impl quote::ToTokens for IsVariantFn<'_> {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let variant_name = Ident::new(self.0.variant_name, Span::call_site());
+        let fn_name = Ident::new(
+            &format!("is_{}", to_snake_case(self.0.variant_name)),
+            Span::call_site(),
+        );
+
+        tokens.append_all(quote! {
+            pub fn #fn_name(self) -> bool {
+                matches!(self, Self::#variant_name(_))
+            }
+        });
+    }
+}
+
+pub struct AsVariantFn<'a>(TypeEdge<'a>);
+
+impl quote::ToTokens for AsVariantFn<'_> {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let variant_name = Ident::new(self.0.variant_name, Span::call_site());
+        let fn_name = Ident::new(
+            &format!("as_{}", to_snake_case(self.0.variant_name)),
+            Span::call_site(),
+        );
+        let reader = Ident::new(self.0.target.name(), Span::call_site());
+
+        tokens.append_all(quote! {
+            pub fn #fn_name(self) -> Option<#reader<'a>> {
+                match self {
+                    Self::#variant_name(inner) => Some(inner),
+                    _ => None
+                }
+            }
         });
     }
 }

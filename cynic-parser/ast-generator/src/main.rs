@@ -1,3 +1,4 @@
+mod casing;
 mod exts;
 mod file;
 mod idents;

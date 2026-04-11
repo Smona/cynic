@@ -7,7 +7,6 @@ use cynic_parser::type_system::{FieldDefinition, ObjectDefinition, TypeDefinitio
 use crate::{
     exts::{FieldExt, ScalarExt},
     file::{EntityOutput, EntityRef},
-    format_code,
     idents::IdIdent,
 };
 
@@ -42,37 +41,37 @@ pub fn object_output(
     let record_fields = edges.iter().copied().map(ObjectField);
     let reader_functions = edges.iter().copied().map(ReaderFunction);
 
-    let record = format_code(quote! {
+    let record = quote! {
         pub struct #record_name {
             #(#record_fields),*
         }
-    })?;
+    };
 
-    let reader = format_code(quote! {
+    let reader = quote! {
         #[derive(Clone, Copy)]
         pub struct #reader_name<'a>(pub(in super::super) ReadContext<'a, #id_name>);
-    })?;
+    };
 
-    let reader_debug = format_code(ObjectDebug(&reader_name, &edges).to_token_stream())?;
+    let reader_debug = ObjectDebug(&reader_name, &edges).to_token_stream();
 
-    let reader_impl = format_code(quote! {
+    let reader_impl = quote! {
         impl <'a> #reader_name<'a> {
             #(#reader_functions)*
         }
-    })?;
+    };
 
-    let reader_id_impl = format_code(quote! {
+    let reader_id_impl = quote! {
         impl #reader_name<'_> {
             pub fn id(&self) -> #id_name {
                 self.0.id
             }
         }
-    })?;
+    };
 
     let id_trait = Ident::new(id_trait, Span::call_site());
     let document_type = Ident::new(document_type, Span::call_site());
 
-    let id_trait_impl = format_code(quote! {
+    let id_trait_impl = quote! {
         impl #id_trait for #id_name {
             type Reader<'a> = #reader_name<'a>;
 
@@ -83,9 +82,9 @@ pub fn object_output(
                 })
             }
         }
-    })?;
+    };
 
-    let id_reader_impl = format_code(quote! {
+    let id_reader_impl = quote! {
         impl IdReader for #reader_name<'_> {
             type Id = #id_name;
             type Reader<'a> = #reader_name<'a>;
@@ -94,7 +93,7 @@ pub fn object_output(
                 document.read(id)
             }
         }
-    })?;
+    };
 
     let contents = indoc::formatdoc!(
         r#"
