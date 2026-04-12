@@ -38,6 +38,8 @@ impl PartialEq for List<'_> {
     }
 }
 
+impl Eq for List<'_> {}
+
 impl fmt::Debug for List<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.items()).finish()

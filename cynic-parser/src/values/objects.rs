@@ -61,6 +61,8 @@ impl PartialEq for Object<'_> {
     }
 }
 
+impl Eq for Object<'_> {}
+
 impl fmt::Debug for Object<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map()
