@@ -159,6 +159,74 @@ impl<'a> TypeDefinition<'a> {
     }
 }
 
+impl<'a> TypeDefinition<'a> {
+    pub fn is_scalar(&self) -> bool {
+        matches!(self, TypeDefinition::Scalar(_))
+    }
+
+    pub fn as_scalar(&self) -> Option<ScalarDefinition<'a>> {
+        match self {
+            TypeDefinition::Scalar(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_object(&self) -> bool {
+        matches!(self, TypeDefinition::Object(_))
+    }
+
+    pub fn as_object(&self) -> Option<ObjectDefinition<'a>> {
+        match self {
+            TypeDefinition::Object(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_interface(&self) -> bool {
+        matches!(self, TypeDefinition::Interface(_))
+    }
+
+    pub fn as_interface(&self) -> Option<InterfaceDefinition<'a>> {
+        match self {
+            TypeDefinition::Interface(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_union(&self) -> bool {
+        matches!(self, TypeDefinition::Union(_))
+    }
+
+    pub fn as_union(&self) -> Option<UnionDefinition<'a>> {
+        match self {
+            TypeDefinition::Union(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_enum(&self) -> bool {
+        matches!(self, TypeDefinition::Enum(_))
+    }
+
+    pub fn as_enum(&self) -> Option<EnumDefinition<'a>> {
+        match self {
+            TypeDefinition::Enum(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+
+    pub fn is_input_object(&self) -> bool {
+        matches!(self, TypeDefinition::InputObject(_))
+    }
+
+    pub fn as_input_object(&self) -> Option<InputObjectDefinition<'a>> {
+        match self {
+            TypeDefinition::InputObject(inner) => Some(*inner),
+            _ => None,
+        }
+    }
+}
+
 impl TypeSystemId for DefinitionId {
     type Reader<'a> = Definition<'a>;
 
