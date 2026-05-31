@@ -100,9 +100,9 @@ impl std::error::Error for Error {
             | Error::MalformedDirectiveLocation(..)
             | Error::VariableInConstPosition(..)
             | Error::EmptyTypeSystemDocument
-            | Error::EmptyExecutableDocument => None,
+            | Error::EmptyExecutableDocument
+            | Error::EmptySchemaCoordinate => None,
             Error::Lexical(error) => Some(error),
-            Error::EmptySchemaCoordinate => todo!(),
         }
     }
 }
