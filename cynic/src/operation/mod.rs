@@ -129,6 +129,23 @@ pub struct StreamingOperation<ResponseData, Variables = ()> {
     inner: Operation<ResponseData, Variables>,
 }
 
+impl<ResponseData, Variables> StreamingOperation<ResponseData, Variables> {
+    /// The query string for this operation
+    pub fn query(&self) -> &str {
+        &self.inner.query
+    }
+
+    /// The variables used in this operation
+    pub fn variables(&self) -> &Variables {
+        &self.inner.variables
+    }
+
+    /// The name of this operation
+    pub fn operation_name(&self) -> Option<&str> {
+        self.inner.operation_name.as_deref()
+    }
+}
+
 impl<Fragment, Variables> StreamingOperation<Fragment, Variables>
 where
     Fragment: QueryFragment,
