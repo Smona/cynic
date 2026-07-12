@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-docs:
+  publish-generator:
     runs-on: debian-trixie
     steps:
       - uses: actions/checkout@v4
