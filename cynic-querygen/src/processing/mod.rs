@@ -2,7 +2,7 @@ mod inputs;
 mod leaf_types;
 mod variables;
 
-use crate::graph::{self, GraphReader, QueryFragment};
+use crate::graph::{self, FragmentId, GraphReader, QueryFragment};
 use inputs::InputObjects;
 
 pub use variables::{VariableStruct, VariableStructField, VariableStructs};
@@ -12,7 +12,7 @@ use cynic_parser::{SchemaCoordinate, common::TypeWrappers};
 use crate::{
     Error, OverrideMap,
     casings::CasingExt,
-    graph::{Fragment, SelectionTarget},
+    graph::SelectionTarget,
     naming::{Nameable, Namer},
     output::{self, Output},
 };
@@ -28,18 +28,18 @@ pub fn graph_to_output<'a>(
     enums.sort_by_key(|e| e.name());
     scalars.sort_by_key(|s| s.name());
 
-    let mut namers = Namers::new();
+    let mut namer = Namer::<FragmentId>::new();
 
     let variable_structs = variables::build_variable_structs(graph);
 
     let query_fragments = graph
         .query_fragments()
-        .map(|fragment| make_query_fragment(fragment, &mut namers, &variable_structs, overrides))
+        .map(|fragment| make_query_fragment(fragment, &mut namer, &variable_structs, overrides))
         .collect::<Vec<_>>();
 
     let inline_fragments = graph
         .inline_fragments()
-        .map(|fragment| make_inline_fragments(fragment, &mut namers, &variable_structs))
+        .map(|fragment| make_inline_fragments(fragment, &mut namer, &variable_structs))
         .collect::<Vec<_>>();
 
     let input_objects = input_objects.processed_objects();
@@ -72,7 +72,7 @@ pub fn graph_to_output<'a>(
 
 fn make_query_fragment<'a>(
     fragment: QueryFragment<'a>,
-    namers: &mut Namers<'a>,
+    namer: &mut Namer<FragmentId>,
     variable_struct_details: &VariableStructs<'a>,
     overrides: &OverrideMap,
 ) -> crate::output::QueryFragment<'a> {
@@ -86,9 +86,7 @@ fn make_query_fragment<'a>(
             .selections()
             .map(|selection| {
                 let type_name_override = match (selection.target(), &selection) {
-                    (SelectionTarget::Fragment(fragment), _) => {
-                        Some(namers.name_fragment(fragment))
-                    }
+                    (SelectionTarget::Fragment(fragment), _) => Some(namer.name_subject(&fragment)),
                     (SelectionTarget::Scalar(_), Selection::Field(field)) => overrides
                         // Check for field-level type overrides using the requested fragment name (before incrementing suffix),
                         // and un-aliased field name in the schema.
@@ -128,14 +126,16 @@ fn make_query_fragment<'a>(
                         }
                     }
                     Selection::Spread(spread) => {
-                        let target_name = namers.name_fragment(spread.target());
+                        let target_name = namer.name_subject(&spread.target());
+
                         OutputField {
                             selection,
                             name: target_name.to_snake_case().into(),
                             rename: None,
                             field_type: RustOutputFieldType {
                                 name: target_name,
-                                wrappers: TypeWrappers::default(),
+                                // Spreads can't have an Option wrapper so make them non-null
+                                wrappers: TypeWrappers::none().wrap_non_null(),
                             },
                         }
                     }
@@ -146,7 +146,7 @@ fn make_query_fragment<'a>(
             .variables_name_for_fragment(fragment.id())
             .map(ToOwned::to_owned),
 
-        name: namers.fragments.name_subject(&fragment),
+        name: namer.name_subject(&fragment),
         target_type: fragment.type_definition().name().to_string(),
         schema_name: None,
     }
@@ -154,42 +154,19 @@ fn make_query_fragment<'a>(
 
 fn make_inline_fragments<'a>(
     inline_fragment: graph::InlineFragment<'a>,
-    namers: &mut Namers<'a>,
+    namer: &mut Namer<FragmentId>,
     variable_structs: &VariableStructs<'a>,
 ) -> crate::output::InlineFragments {
     crate::output::InlineFragments {
         inner_type_names: inline_fragment
             .variants()
-            .map(|fragment| namers.name_fragment(fragment))
+            .map(|fragment| namer.name_subject(&fragment))
             .collect(),
         target_type: inline_fragment.type_definition().name().into(),
         variable_struct_name: variable_structs
             .variables_name_for_fragment(inline_fragment.id())
             .map(ToOwned::to_owned),
-        name: namers.inline_fragments.name_subject(&inline_fragment),
+        name: namer.name_subject(&inline_fragment),
         schema_name: None,
-    }
-}
-
-struct Namers<'a> {
-    fragments: Namer<graph::QueryFragment<'a>>,
-    inline_fragments: Namer<graph::InlineFragment<'a>>,
-}
-
-impl<'a> Namers<'a> {
-    pub fn new() -> Self {
-        Namers {
-            fragments: Namer::new(),
-            inline_fragments: Namer::new(),
-        }
-    }
-
-    pub fn name_fragment(&mut self, fragment: Fragment<'a>) -> String {
-        match &fragment {
-            Fragment::Query(query_fragment) => self.fragments.name_subject(query_fragment),
-            Fragment::Inline(inline_fragment) => {
-                self.inline_fragments.name_subject(inline_fragment)
-            }
-        }
     }
 }

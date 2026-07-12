@@ -1,0 +1,51 @@
+---
+source: cynic-querygen/tests/misc-tests.rs
+expression: "cynic_querygen::Generator::new(schema).expect(\"schema parse failed\").generate(query).expect(\"querygen failed\")"
+snapshot_kind: text
+---
+#[derive(cynic::QueryVariables, Debug)]
+pub struct DoorActivitySubscriptionVariables {
+    pub door_ids: Vec<Uuid>,
+    pub since: DateTime,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Subscription", variables = "DoorActivitySubscriptionVariables")]
+pub struct DoorActivitySubscription {
+    #[arguments(doorUids: $door_ids, receivedSince: $since)]
+    pub door_activity: DoorActivityEvent,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct DoorActivityEvent {
+    pub occurred_at: DateTime,
+    pub received_at: DateTime,
+    #[cynic(spread)]
+    pub door_activity_event2: DoorActivityEvent2,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct BadgeSwipeEvent {
+    pub badge_swipe: BadgeSwipe,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct BadgeSwipe {
+    pub uid: String,
+    pub outcome: String,
+}
+
+#[derive(cynic::InlineFragments, Debug)]
+#[cynic(graphql_type = "DoorActivityEvent")]
+pub enum DoorActivityEvent2 {
+    BadgeSwipeEvent(BadgeSwipeEvent),
+    #[cynic(fallback)]
+    Unknown
+}
+
+#[derive(cynic::Scalar, Debug, Clone)]
+pub struct DateTime(pub String);
+
+#[derive(cynic::Scalar, Debug, Clone)]
+#[cynic(graphql_type = "UUID")]
+pub struct Uuid(pub String);

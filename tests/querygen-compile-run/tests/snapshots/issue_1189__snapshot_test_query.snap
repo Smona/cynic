@@ -1,0 +1,21 @@
+---
+source: tests/querygen-compile-run/tests/issue-1189.rs
+expression: operation.query()
+snapshot_kind: text
+---
+subscription DoorActivitySubscription($doorIds: [UUID!]!, $since: DateTime!) {
+  doorActivity(doorUids: $doorIds, receivedSince: $since) {
+    occurredAt
+    receivedAt
+    __typename
+    ... {
+      __typename
+      ... on BadgeSwipeEvent {
+        badgeSwipe {
+          uid
+          outcome
+        }
+      }
+    }
+  }
+}

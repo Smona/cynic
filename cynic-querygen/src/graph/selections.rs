@@ -1,3 +1,5 @@
+use std::iter;
+
 use super::{Directive, Edge, EdgeRef, Field, Type, fields::FieldTarget, fragments::Fragment};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -37,29 +39,32 @@ pub enum SelectionTarget<'a> {
 pub struct Spread<'a>(pub(super) EdgeRef<'a>);
 
 impl<'a> Spread<'a> {
-    pub fn directives(&self) -> impl Iterator<Item = Directive<'a>> {
-        match self.0.weight() {
-            Edge::HasInlineSpread { fragment, .. } => {
-                self.0.reader.executable.read(*fragment).directives()
+    pub fn directives(self) -> Box<dyn Iterator<Item = Directive<'a>> + 'a> {
+        Box::new(
+            match self.0.weight() {
+                Edge::HasInlineSpread { fragment, .. } => {
+                    self.0.reader.executable.read(*fragment).directives()
+                }
+                Edge::HasFragment { fragment, .. } => {
+                    self.0.reader.executable.read(*fragment).directives()
+                }
+                Edge::HasSyntheticSpread { .. } => return Box::new(iter::empty()),
+                _ => unreachable!("Spread should point at an inline or fragment"),
             }
-            Edge::HasFragment { fragment, .. } => {
-                self.0.reader.executable.read(*fragment).directives()
-            }
-            _ => unreachable!("Spread should point at an inline or fragment"),
-        }
-        .map(move |directive| {
-            let definition = self
-                .0
-                .reader
-                .directive_definition(directive.name())
-                .unwrap_or_else(|| panic!("could not find directive @{}", directive.name()));
+            .map(move |directive| {
+                let definition = self
+                    .0
+                    .reader
+                    .directive_definition(directive.name())
+                    .unwrap_or_else(|| panic!("could not find directive @{}", directive.name()));
 
-            Directive {
-                directive,
-                definition,
-                reader: self.0.reader,
-            }
-        })
+                Directive {
+                    directive,
+                    definition,
+                    reader: self.0.reader,
+                }
+            }),
+        )
     }
 
     pub fn target(&self) -> Fragment<'a> {

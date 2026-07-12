@@ -189,8 +189,23 @@ enum Edge {
         fragment: executable::ids::FragmentSpreadId,
         index: usize,
     },
+    HasSyntheticSpread {
+        index: usize,
+    },
 
     IsOfType,
+}
+
+impl Edge {
+    fn selection_index(&self) -> Option<usize> {
+        match self {
+            Edge::HasField { index, .. } => Some(*index),
+            Edge::HasInlineSpread { index, .. } => Some(*index),
+            Edge::HasFragment { index, .. } => Some(*index),
+            Edge::HasSyntheticSpread { index } => Some(*index),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

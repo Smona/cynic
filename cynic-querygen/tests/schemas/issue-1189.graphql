@@ -1,0 +1,26 @@
+type Subscription {
+  doorActivity(doorUids: [UUID!]!, receivedSince: DateTime!): DoorActivityEvent!
+}
+
+interface DoorActivityEvent {
+  occurredAt: DateTime!
+  receivedAt: DateTime!
+}
+
+type BadgeSwipeEvent implements DoorActivityEvent {
+  occurredAt: DateTime!
+  receivedAt: DateTime!
+  badgeSwipe: BadgeSwipe!
+}
+
+type BadgeSwipe {
+  uid: String!
+  outcome: String!
+}
+
+scalar DateTime
+scalar UUID
+
+type Query {
+  foo: Boolean
+}

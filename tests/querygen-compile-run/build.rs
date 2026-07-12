@@ -236,6 +236,15 @@ fn main() {
                 input: OneOfObject::Int(1)
             })"#,
         ),
+        TestCase::subscription(
+            &Schema::from_querygen_test_schemas("issue_1189", "", "issue-1189.graphql"),
+            "../../cynic-querygen/tests/queries/misc/issue-1189.graphql",
+            r#"DoorActivitySubscription::build(DoorActivitySubscriptionVariables {
+                door_ids: vec![],
+                since: DateTime("".into())
+            })"#,
+        )
+        .with_query_snapshot_test(),
     ];
 
     for case in cases {
@@ -249,7 +258,8 @@ struct TestCase {
     operation_construct: String,
     should_run: bool,
     is_subscription: bool,
-    should_snapshot_test: bool,
+    should_snapshot_test_output: bool,
+    should_snapshot_test_query: bool,
 }
 
 impl TestCase {
@@ -264,7 +274,8 @@ impl TestCase {
             operation_construct: operation_construct.into(),
             should_run: true,
             is_subscription: false,
-            should_snapshot_test: false,
+            should_snapshot_test_output: false,
+            should_snapshot_test_query: false,
         }
     }
 
@@ -279,7 +290,8 @@ impl TestCase {
             operation_construct: operation_construct.into(),
             should_run: false,
             is_subscription: false,
-            should_snapshot_test: false,
+            should_snapshot_test_output: false,
+            should_snapshot_test_query: false,
         }
     }
 
@@ -295,7 +307,8 @@ impl TestCase {
             // We don't run mutations by default
             should_run: false,
             is_subscription: false,
-            should_snapshot_test: false,
+            should_snapshot_test_output: false,
+            should_snapshot_test_query: false,
         }
     }
 
@@ -311,7 +324,15 @@ impl TestCase {
             // We don't run subscriptions by default
             should_run: false,
             is_subscription: true,
-            should_snapshot_test: false,
+            should_snapshot_test_output: false,
+            should_snapshot_test_query: false,
+        }
+    }
+
+    fn with_query_snapshot_test(self) -> Self {
+        TestCase {
+            should_snapshot_test_query: true,
+            ..self
         }
     }
 
@@ -351,7 +372,7 @@ impl TestCase {
                 Some(_) => "mock_server.url().as_ref()".into(),
                 None => format!("\"{}\"", self.schema.query_url),
             };
-            if self.should_snapshot_test {
+            if self.should_snapshot_test_output {
                 formatdoc!(
                     r#"
                     let response = querygen_compile_run::send({url}, {operation_construct}).await.unwrap();
@@ -368,6 +389,24 @@ impl TestCase {
             }
         };
 
+        let query_snapshot_test = if self.should_snapshot_test_query {
+            formatdoc!(
+                r#"
+                #[test]
+                fn snapshot_test_query() {{
+                    use cynic::{{QueryBuilder, MutationBuilder, SubscriptionBuilder}};
+
+                    let operation = {operation_construct};
+
+                    insta::assert_display_snapshot!(operation.query());
+                }}
+                "#,
+                operation_construct = self.operation_construct
+            )
+        } else {
+            "".into()
+        };
+
         writedoc!(
             &mut file,
             r#"
@@ -380,6 +419,8 @@ impl TestCase {
                 use cynic::{{QueryBuilder, MutationBuilder, SubscriptionBuilder}};
                 {run_code}
             }}
+
+            {query_snapshot_test}
 
             {query_code}
 
@@ -409,13 +450,35 @@ impl Schema {
         self
     }
 
-    /// Constructs a SchemaPath from the examples package
+    /// Constructs a SchemaPath from the schemas folder
     fn from_repo_schemas(
         schema_name: impl Into<String>,
         query_url: impl Into<String>,
         path: impl Into<PathBuf>,
     ) -> Schema {
         let schema_dir = PathBuf::from("../../schemas/");
+        let path = schema_dir.join(path.into());
+        let schema_name = schema_name.into();
+
+        cynic_codegen::register_schema(&schema_name)
+            .from_sdl_file(&path)
+            .unwrap();
+
+        Schema {
+            query_url: query_url.into(),
+            path_for_loading: path,
+            schema_name,
+            mock_name: None,
+        }
+    }
+
+    /// Constructs a SchemaPath from the examples package
+    fn from_querygen_test_schemas(
+        schema_name: impl Into<String>,
+        query_url: impl Into<String>,
+        path: impl Into<PathBuf>,
+    ) -> Schema {
+        let schema_dir = PathBuf::from("../../cynic-querygen/tests/schemas/");
         let path = schema_dir.join(path.into());
         let schema_name = schema_name.into();
 

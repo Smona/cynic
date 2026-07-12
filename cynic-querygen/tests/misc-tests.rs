@@ -185,3 +185,16 @@ fn test_oneof_inputs() {
             .expect("querygen failed")
     )
 }
+
+#[test]
+fn test_issue_1189() {
+    let schema = include_str!("schemas/issue-1189.graphql");
+    let query = include_str!("queries/misc/issue-1189.graphql");
+
+    assert_snapshot!(
+        cynic_querygen::Generator::new(schema)
+            .expect("schema parse failed")
+            .generate(query)
+            .expect("querygen failed")
+    )
+}

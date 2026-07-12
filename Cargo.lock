@@ -3279,6 +3279,7 @@ dependencies = [
  "cynic-querygen",
  "graphql-mocks",
  "indoc",
+ "insta",
  "reqwest",
  "serde_json",
  "tokio",

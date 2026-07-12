@@ -40,6 +40,7 @@ impl GraphReader<'_> {
             Edge::HasInlineSpread { .. } => "".into(),
             Edge::HasFragment { .. } => "".into(),
             Edge::IsOfType => "".into(),
+            Edge::HasSyntheticSpread { .. } => "".into(),
         }
     }
 

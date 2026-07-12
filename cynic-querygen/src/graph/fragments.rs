@@ -41,6 +41,9 @@ impl<'a> QueryFragment<'a> {
                 Edge::HasInlineSpread { index, .. } | Edge::HasFragment { index, .. } => {
                     Some((Selection::Spread(super::Spread(edge)), index))
                 }
+                Edge::HasSyntheticSpread { index } => {
+                    Some((Selection::Spread(super::Spread(edge)), index))
+                }
             })
             .sorted_by_key(|(_, index)| **index)
             .map(|(selection, _)| selection)
@@ -48,10 +51,10 @@ impl<'a> QueryFragment<'a> {
 }
 
 impl Nameable for QueryFragment<'_> {
-    type Id = QueryFragmentId;
+    type Id = FragmentId;
 
     fn id(&self) -> Self::Id {
-        QueryFragment::id(self)
+        QueryFragment::id(self).into()
     }
 
     fn requested_name(&self) -> String {
@@ -100,10 +103,10 @@ impl<'a> InlineFragment<'a> {
 }
 
 impl Nameable for InlineFragment<'_> {
-    type Id = QueryFragmentId;
+    type Id = FragmentId;
 
     fn id(&self) -> Self::Id {
-        InlineFragment::id(self)
+        InlineFragment::id(self).into()
     }
 
     fn requested_name(&self) -> String {
@@ -186,6 +189,21 @@ impl<'a> From<QueryFragment<'a>> for Fragment<'a> {
 impl<'a> From<InlineFragment<'a>> for Fragment<'a> {
     fn from(value: InlineFragment<'a>) -> Self {
         Fragment::Inline(value)
+    }
+}
+
+impl Nameable for Fragment<'_> {
+    type Id = FragmentId;
+
+    fn id(&self) -> Self::Id {
+        self.id()
+    }
+
+    fn requested_name(&self) -> String {
+        match self {
+            Fragment::Query(inner) => inner.requested_name(),
+            Fragment::Inline(inner) => inner.requested_name(),
+        }
     }
 }
 

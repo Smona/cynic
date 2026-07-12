@@ -1,0 +1,13 @@
+subscription DoorActivitySubscription($doorIds: [UUID!]!, $since: DateTime!) {
+  doorActivity(doorUids: $doorIds, receivedSince: $since) {
+    occurredAt
+    receivedAt
+
+    ... on BadgeSwipeEvent {
+      badgeSwipe {
+        uid
+        outcome
+      }
+    }
+  }
+}

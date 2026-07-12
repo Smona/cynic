@@ -8,34 +8,34 @@ pub trait Nameable {
 }
 
 #[derive(Debug)]
-pub struct Namer<Subject>
-where
-    Subject: Nameable,
-{
-    named_subjects: HashMap<Subject::Id, String>,
+pub struct Namer<Id> {
+    named_subjects: HashMap<Id, String>,
     used_names: HashMap<String, u16>,
 }
 
-impl<Subject> Namer<Subject>
+impl<Id> Namer<Id>
 where
-    Subject: Nameable,
+    Id: Eq + Hash,
 {
-    pub fn new() -> Namer<Subject> {
+    pub fn new() -> Namer<Id> {
         Namer {
             named_subjects: HashMap::new(),
             used_names: HashMap::new(),
         }
     }
 
-    pub fn name_subject(&mut self, subject: &Subject) -> String {
+    pub fn name_subject<Subject>(&mut self, subject: &Subject) -> String
+    where
+        Subject: Nameable<Id = Id>,
+    {
         if let Some(name) = self.named_subjects.get(&subject.id()) {
             return name.clone();
         }
 
-        self.impl_naming(subject, subject.requested_name())
+        self.impl_naming(subject.id(), subject.requested_name())
     }
 
-    fn impl_naming(&mut self, subject: &Subject, requested_name: String) -> String {
+    fn impl_naming(&mut self, id: Id, requested_name: String) -> String {
         let used_count = self.used_names.entry(requested_name.clone()).or_insert(0);
         *used_count += 1;
         let name = if *used_count == 1 {
@@ -44,7 +44,7 @@ where
             format!("{}{}", requested_name, used_count)
         };
 
-        self.named_subjects.insert(subject.id(), name.clone());
+        self.named_subjects.insert(id, name.clone());
 
         name
     }

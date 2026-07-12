@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cynic_parser::{
     ExecutableDocument, TypeSystemDocument,
-    executable::{ExecutableDefinition, Iter, OperationDefinition, Selection},
+    executable::{ExecutableDefinition, OperationDefinition, Selection},
     type_system::{self, Definition},
 };
 
@@ -53,7 +53,7 @@ impl GraphBuilder<'_> {
     fn root_index(&self, ty: cynic_parser::common::OperationType) -> Option<NodeIndex> {
         let roots = self.roots.as_ref().unwrap();
         match ty {
-            cynic_parser::common::OperationType::Query => Some(roots.query),
+            cynic_parser::common::OperationType::Query => roots.query,
             cynic_parser::common::OperationType::Mutation => roots.mutation,
             cynic_parser::common::OperationType::Subscription => roots.subscription,
         }
@@ -116,7 +116,9 @@ struct FieldDetails {
 }
 
 struct RootDefinitions {
-    query: NodeIndex,
+    // Technically I think a schema _has_ to have a query but for the sake of querygen lets relax
+    // that a little bit and make everything optional
+    query: Option<NodeIndex>,
     mutation: Option<NodeIndex>,
     subscription: Option<NodeIndex>,
 }
@@ -186,12 +188,9 @@ fn find_roots(builder: &GraphBuilder) -> RootDefinitions {
     let default_mutation = (!seen_schema && seen_mutation).then_some("Mutation");
     let default_subscription = (!seen_schema && seen_subscription).then_some("Subscription");
 
-    let Some(query_name) = query_name.or(default_query) else {
-        panic!("could not find root query operation")
-    };
-    let Some(query) = builder.types.get(query_name).cloned() else {
-        panic!("unknown type used for root query operation: {query_name}")
-    };
+    let query = query_name
+        .or(default_query)
+        .and_then(|name| builder.types.get(name).cloned());
     let mutation = mutation_name
         .or(default_mutation)
         .and_then(|name| builder.types.get(name).cloned());
@@ -247,7 +246,8 @@ fn ingest_operation(builder: &mut GraphBuilder, operation: OperationDefinition<'
             )
         });
 
-    let selection_set_node = ingest_selection_set(builder, root_type, operation.selection_set());
+    let selection_set_node =
+        ingest_selection_set(builder, root_type, operation.selection_set().collect());
     builder
         .graph
         .add_edge(operation_node, selection_set_node, Edge::HasSelectionSet);
@@ -262,7 +262,8 @@ fn ingest_named_fragment_selection_set(
         .get(fragment.type_condition())
         .unwrap_or_else(|| panic!("could not find type {}", fragment.type_condition()));
 
-    let selection_set_node = ingest_selection_set(builder, *type_node, fragment.selection_set());
+    let selection_set_node =
+        ingest_selection_set(builder, *type_node, fragment.selection_set().collect());
     let fragment_node = builder
         .named_fragments
         .get(fragment.name())
@@ -276,30 +277,82 @@ fn ingest_named_fragment_selection_set(
 fn ingest_selection_set(
     builder: &mut GraphBuilder,
     type_node: NodeIndex,
-    selection_set: Iter<'_, Selection>,
+    selection_set: Vec<Selection<'_>>,
 ) -> NodeIndex {
     let current_typename = builder
         .type_names
         .get(&type_node)
         .expect("all types should be named");
 
-    let should_be_inline_fragment = selection_set.clone().all(|selection| match selection {
-        Selection::Field(field) if field.name() == "__typename" => true,
-        Selection::Field(_) => false,
-        Selection::InlineFragment(inline_fragment) => {
-            inline_fragment.type_condition().is_some()
-                && inline_fragment.type_condition() != Some(current_typename)
-        }
-        Selection::FragmentSpread(spread) => {
-            spread
-                .fragment()
-                .expect("doc should be validated")
-                .type_condition()
-                != current_typename
-        }
+    let need_query_fragment = selection_set.iter().copied().any(|selection| {
+        selection
+            .as_field()
+            .filter(|field| field.name() != "__typename")
+            .is_some()
     });
+    let needs_inline_fragments = selection_set
+        .iter()
+        .copied()
+        .any(|selection| match selection {
+            Selection::InlineFragment(fragment) => {
+                fragment.type_condition().is_some()
+                    && fragment.type_condition() != Some(current_typename)
+            }
+            Selection::FragmentSpread(spread) => {
+                spread
+                    .fragment()
+                    .expect("doc should be validated")
+                    .type_condition()
+                    != current_typename
+            }
+            _ => false,
+        });
 
-    let this_node = if should_be_inline_fragment {
+    if need_query_fragment && needs_inline_fragments {
+        // Split selections up
+        let (query_selections, inline_selections) = selection_set
+            .iter()
+            .copied()
+            .partition::<Vec<_>, _>(|selection| match selection {
+                Selection::Field(_) => true,
+                Selection::InlineFragment(fragment) => {
+                    fragment.type_condition().is_none()
+                        || fragment.type_condition() == Some(current_typename)
+                }
+                Selection::FragmentSpread(spread) => {
+                    spread
+                        .fragment()
+                        .expect("doc should be validated")
+                        .type_condition()
+                        == current_typename
+                }
+            });
+
+        assert!(!query_selections.is_empty());
+        assert!(!inline_selections.is_empty());
+
+        let query_fragment = ingest_selection_set(builder, type_node, query_selections);
+        let inline_fragment = ingest_selection_set(builder, type_node, inline_selections);
+
+        let max_index = builder
+            .graph
+            .edges(query_fragment)
+            .filter_map(|edge| edge.weight().selection_index())
+            .max()
+            .expect("there should be at least one selection");
+
+        builder.graph.add_edge(
+            query_fragment,
+            inline_fragment,
+            Edge::HasSyntheticSpread {
+                index: max_index + 1,
+            },
+        );
+
+        return query_fragment;
+    }
+
+    let this_node = if needs_inline_fragments {
         builder.graph.add_node(Node::InlineFragment)
     } else {
         builder.graph.add_node(Node::QueryFragment)
@@ -307,7 +360,7 @@ fn ingest_selection_set(
 
     builder.graph.add_edge(this_node, type_node, Edge::IsOfType);
 
-    for (index, selection) in selection_set.enumerate() {
+    for (index, selection) in selection_set.into_iter().enumerate() {
         match selection {
             Selection::Field(field) => {
                 let FieldDetails {
@@ -318,7 +371,7 @@ fn ingest_selection_set(
                     .unwrap_or_else(|| panic!("could not find field {}", field.name()));
 
                 let child_node = if field.selection_set().len() != 0 {
-                    ingest_selection_set(builder, ty_node, field.selection_set())
+                    ingest_selection_set(builder, ty_node, field.selection_set().collect())
                 } else {
                     ingest_scalar_field(builder, ty_node)
                 };
@@ -344,8 +397,11 @@ fn ingest_selection_set(
                     None => type_node,
                 };
 
-                let child_node =
-                    ingest_selection_set(builder, field_type_node, inline_fragment.selection_set());
+                let child_node = ingest_selection_set(
+                    builder,
+                    field_type_node,
+                    inline_fragment.selection_set().collect(),
+                );
                 builder.graph.add_edge(
                     this_node,
                     child_node,

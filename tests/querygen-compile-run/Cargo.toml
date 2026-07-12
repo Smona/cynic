@@ -14,6 +14,7 @@ reqwest = { version = "0.13", features = ["json"] }
 
 [dev-dependencies]
 graphql-mocks.workspace = true
+insta.workspace = true
 tokio = { version = "1", features = ["macros"] }
 trybuild = "1.0.80"
 
