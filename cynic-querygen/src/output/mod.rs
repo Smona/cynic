@@ -1,4 +1,4 @@
-use crate::casings::CasingExt;
+use crate::{casings::CasingExt, graph::ScalarDefinition, processing::VariableStructs};
 
 mod attr_output;
 mod enums;
@@ -15,29 +15,29 @@ pub use {
     inline_fragments::InlineFragments,
     input_object::{InputObject, InputObjectField},
     query_fragment::QueryFragment,
-    variables_struct::{VariablesStruct, VariablesStructField, VariablesStructForDisplay},
+    variables_struct::VariablesStructForDisplay,
 };
 
 use field::Field;
 
-pub struct Output<'query, 'schema> {
-    pub query_fragments: Vec<QueryFragment<'query, 'schema>>,
+pub struct Output<'a> {
+    pub query_fragments: Vec<QueryFragment<'a>>,
     pub inline_fragments: Vec<InlineFragments>,
-    pub input_objects: Vec<InputObject<'schema>>,
-    pub enums: Vec<Enum<'schema>>,
-    pub scalars: Vec<Scalar<'schema>>,
-    pub variables_structs: Vec<VariablesStruct<'query, 'schema>>,
+    pub input_objects: Vec<InputObject<'a>>,
+    pub enums: Vec<Enum<'a>>,
+    pub scalars: Vec<Scalar<'a>>,
+    pub variable_structs: VariableStructs<'a>,
 }
 
-pub struct Scalar<'schema> {
-    pub name: &'schema str,
+pub struct Scalar<'a> {
+    pub definition: ScalarDefinition<'a>,
     pub schema_name: Option<String>,
 }
 
 impl std::fmt::Display for Scalar<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let graphql_name = self.name;
-        let rust_name = self.name.to_pascal_case();
+        let graphql_name = self.definition.name();
+        let rust_name = graphql_name.to_pascal_case();
 
         writeln!(f, "#[derive(cynic::Scalar, Debug, Clone)]")?;
 

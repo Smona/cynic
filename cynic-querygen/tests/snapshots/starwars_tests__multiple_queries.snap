@@ -1,6 +1,7 @@
 ---
 source: cynic-querygen/tests/starwars-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryVariables, Debug)]
 pub struct SingleFilmVariables<'a> {
@@ -8,10 +9,31 @@ pub struct SingleFilmVariables<'a> {
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Root", variables = "SingleFilmVariables")]
-pub struct SingleFilm {
-    #[arguments(id: $id)]
-    pub film: Option<Film>,
+#[cynic(graphql_type = "Root")]
+pub struct PlanetsAndFilms {
+    pub all_planets: Option<PlanetsConnection>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct PlanetsConnection {
+    pub planets: Option<Vec<Option<Planet>>>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct Planet {
+    pub film_connection: Option<PlanetFilmsConnection>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct PlanetFilmsConnection {
+    pub films: Option<Vec<Option<Film>>>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct Film {
+    pub id: cynic::Id,
+    pub title: Option<String>,
+    pub edited: Option<String>,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
@@ -34,13 +56,14 @@ pub struct Starship {
 
 #[derive(cynic::QueryFragment, Debug)]
 pub struct StarshipFilmsConnection {
-    pub films: Option<Vec<Option<Film>>>,
+    pub films: Option<Vec<Option<Film2>>>,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Root")]
-pub struct PlanetsAndFilms {
-    pub all_planets: Option<PlanetsConnection>,
+#[cynic(graphql_type = "Root", variables = "SingleFilmVariables")]
+pub struct SingleFilm {
+    #[arguments(id: $id)]
+    pub film: Option<Film2>,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
@@ -50,23 +73,8 @@ pub struct AllFilms {
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-pub struct PlanetsConnection {
-    pub planets: Option<Vec<Option<Planet>>>,
-}
-
-#[derive(cynic::QueryFragment, Debug)]
-pub struct Planet {
-    pub film_connection: Option<PlanetFilmsConnection>,
-}
-
-#[derive(cynic::QueryFragment, Debug)]
-pub struct PlanetFilmsConnection {
-    pub films: Option<Vec<Option<Film2>>>,
-}
-
-#[derive(cynic::QueryFragment, Debug)]
 pub struct FilmsConnection {
-    pub films: Option<Vec<Option<Film>>>,
+    pub films: Option<Vec<Option<Film2>>>,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
@@ -74,13 +82,4 @@ pub struct FilmsConnection {
 pub struct Film2 {
     pub id: cynic::Id,
     pub title: Option<String>,
-    pub edited: Option<String>,
 }
-
-#[derive(cynic::QueryFragment, Debug)]
-pub struct Film {
-    pub id: cynic::Id,
-    pub title: Option<String>,
-}
-
-

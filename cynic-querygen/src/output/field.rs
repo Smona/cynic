@@ -8,6 +8,7 @@ pub struct Field<'a> {
     name: &'a str,
     rename: Option<&'a str>,
     type_spec: &'a TypeSpec<'a>,
+    is_spread: bool,
 }
 
 impl<'a> Field<'a> {
@@ -16,11 +17,16 @@ impl<'a> Field<'a> {
             name,
             type_spec,
             rename: None,
+            is_spread: false,
         }
     }
 
     pub fn add_rename(&mut self, name: &'a str) {
         self.rename = Some(name);
+    }
+
+    pub fn add_spread(&mut self) {
+        self.is_spread = true;
     }
 
     fn name(&self) -> Cow<'a, str> {
@@ -41,8 +47,19 @@ impl<'a> Field<'a> {
 
 impl std::fmt::Display for Field<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(rename) = self.rename() {
-            writeln!(f, r#"#[cynic(rename = "{}")]"#, rename)?;
+        let rename = self.rename();
+        if rename.is_some() || self.is_spread {
+            write!(f, "#[cynic(")?;
+            if let Some(rename) = rename {
+                write!(f, r#"rename = "{rename}""#)?;
+                if self.is_spread {
+                    write!(f, ", ")?;
+                }
+            }
+            if self.is_spread {
+                write!(f, "spread")?;
+            }
+            writeln!(f, ")]")?;
         }
         writeln!(f, "pub {}: {},", self.name(), self.type_spec.name)
     }

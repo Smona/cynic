@@ -5,12 +5,18 @@ pub trait CasingExt {
     fn to_camel_case(&self) -> String;
     fn to_pascal_case(&self) -> String;
 
+    /// to_pascal_case but avoids re-casing if the input looks pascal casey already
+    ///
+    /// This allows us to avoid unnecesarily renaming types/queries that are
+    /// _basically_ already pascal cased
+    fn to_soft_pascal_case(&self) -> String;
+
     fn to_screaming_snake_case(&self) -> String {
         self.to_snake_case().to_uppercase()
     }
 }
 
-impl CasingExt for &str {
+impl CasingExt for str {
     // Specifically re-implementing this because the inflector impl
     // doesn't do the right thing with leading underscores
     fn to_snake_case(&self) -> String {
@@ -102,6 +108,19 @@ impl CasingExt for &str {
 
         buf
     }
+
+    fn to_soft_pascal_case(&self) -> std::string::String {
+        if !self.contains('_')
+            && self
+                .chars()
+                .nth(0)
+                .map(char::is_uppercase)
+                .unwrap_or_default()
+        {
+            return self.to_string();
+        }
+        self.to_pascal_case()
+    }
 }
 
 impl CasingExt for String {
@@ -116,6 +135,10 @@ impl CasingExt for String {
     fn to_pascal_case(&self) -> String {
         self.as_str().to_pascal_case()
     }
+
+    fn to_soft_pascal_case(&self) -> String {
+        self.as_str().to_soft_pascal_case()
+    }
 }
 
 impl CasingExt for Cow<'_, str> {
@@ -129,5 +152,23 @@ impl CasingExt for Cow<'_, str> {
 
     fn to_pascal_case(&self) -> String {
         self.as_ref().to_pascal_case()
+    }
+
+    fn to_soft_pascal_case(&self) -> String {
+        self.as_ref().to_soft_pascal_case()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn soft_pascal_casing() {
+        assert_eq!("hello".to_soft_pascal_case(), "Hello");
+        assert_eq!("hello_there".to_soft_pascal_case(), "HelloThere");
+        assert_eq!("Hello".to_soft_pascal_case(), "Hello");
+        assert_eq!("HelloThere".to_soft_pascal_case(), "HelloThere");
+        assert_eq!("HTTP".to_soft_pascal_case(), "HTTP");
     }
 }

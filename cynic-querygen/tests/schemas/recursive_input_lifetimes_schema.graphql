@@ -1,7 +1,3 @@
-schema {
-  mutation: Mutation
-}
-
 type Query {
   "Ensures Query is not empty if Mutation is not used for a test case"
   _dummy: Boolean

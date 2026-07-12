@@ -1,10 +1,10 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Query")]
-pub struct UnnamedQuery {
+pub struct Query {
     #[arguments(owner: "obmarg", name: "cynic")]
     pub repository: Option<Repository>,
 }
@@ -38,5 +38,3 @@ pub enum IssueOrPullRequest {
 
 #[derive(cynic::Scalar, Debug, Clone)]
 pub struct DateTime(pub String);
-
-

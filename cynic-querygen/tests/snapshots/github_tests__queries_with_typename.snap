@@ -1,10 +1,10 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Query")]
-pub struct UnnamedQuery {
+pub struct Query {
     #[arguments(owner: "obmarg", name: "cynic")]
     pub repository: Option<Repository>,
 }
@@ -18,13 +18,6 @@ pub struct Repository {
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-pub struct PullRequest {
-    pub __typename: String,
-    pub id: cynic::Id,
-    pub title: String,
-}
-
-#[derive(cynic::QueryFragment, Debug)]
 pub struct IssueConnection {
     pub edges: Option<Vec<Option<IssueEdge>>>,
 }
@@ -32,15 +25,6 @@ pub struct IssueConnection {
 #[derive(cynic::QueryFragment, Debug)]
 pub struct IssueEdge {
     pub node: Option<Issue>,
-}
-
-#[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Issue")]
-pub struct Issue2 {
-    pub __typename: String,
-    pub id: cynic::Id,
-    pub title: String,
-    pub last_edited_at: Option<DateTime>,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
@@ -54,6 +38,22 @@ pub struct Actor {
     pub login: String,
 }
 
+#[derive(cynic::QueryFragment, Debug)]
+pub struct PullRequest {
+    pub __typename: String,
+    pub id: cynic::Id,
+    pub title: String,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Issue")]
+pub struct Issue2 {
+    pub __typename: String,
+    pub id: cynic::Id,
+    pub title: String,
+    pub last_edited_at: Option<DateTime>,
+}
+
 #[derive(cynic::InlineFragments, Debug)]
 pub enum IssueOrPullRequest {
     Issue2(Issue2),
@@ -64,5 +64,3 @@ pub enum IssueOrPullRequest {
 
 #[derive(cynic::Scalar, Debug, Clone)]
 pub struct DateTime(pub String);
-
-

@@ -42,6 +42,7 @@ impl TypeWrappers {
         TypeWrappers(new)
     }
 
+    /// Iterator over wrapper types from outermost to innermost
     pub fn iter(&self) -> TypeWrappersIter {
         let current_wrappers = self.num_list_wrappers();
         TypeWrappersIter {
@@ -69,6 +70,7 @@ impl FromIterator<WrappingType> for TypeWrappers {
 }
 
 #[derive(Clone)]
+/// Iterator over wrapper types from outermost to innermost
 pub struct TypeWrappersIter {
     encoded: u32,
     mask: u32,

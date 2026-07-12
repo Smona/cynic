@@ -1,10 +1,10 @@
 ---
 source: cynic-querygen/tests/starwars-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Root")]
-pub struct UnnamedQuery {
+pub struct Root {
     #[arguments(id: "ZmlsbXM6MQ==")]
     #[cynic(rename = "film")]
     pub a_new_hope: Option<Film>,
@@ -17,5 +17,3 @@ pub struct UnnamedQuery {
 pub struct Film {
     pub title: Option<String>,
 }
-
-

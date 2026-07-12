@@ -53,7 +53,7 @@ fn main() {
         TestCase::query(
             &starwars_schema,
             "../../cynic-querygen/tests/queries/starwars/bare-selection-set.graphql",
-            r#"UnnamedQuery::build(())"#,
+            r#"Root::build(())"#,
         ),
         TestCase::query(
             &starwars_schema,
@@ -133,7 +133,7 @@ fn main() {
         TestCase::query_norun(
             &github_schema,
             "../../cynic-querygen/tests/queries/github/queries-with-typename.graphql",
-            r#"UnnamedQuery::build(())"#,
+            r#"Query::build(())"#,
         ),
         TestCase::query_norun(
             &github_schema,

@@ -1,16 +1,16 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
 snapshot_kind: text
 ---
 #[derive(cynic::QueryVariables, Debug)]
-pub struct UnnamedQueryVariables {
+pub struct QueryVariables {
     pub include_all: bool,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Query", variables = "UnnamedQueryVariables")]
-pub struct UnnamedQuery {
+#[cynic(variables = "QueryVariables")]
+pub struct Query {
     #[arguments(owner: "obmarg", name: "cynic")]
     #[directives(include(if: $include_all))]
     pub repository: Option<Repository>,

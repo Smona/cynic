@@ -1,14 +1,17 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 mod casings;
+mod graph;
 mod naming;
 mod output;
-mod query_parsing;
+mod processing;
 mod schema;
 
 use cynic_parser::{SchemaCoordinate, type_system::ids::FieldDefinitionId};
 use output::Output;
-use schema::{GraphPath, TypeIndex, add_builtins};
+use schema::add_builtins;
+
+use crate::processing::graph_to_output;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -242,12 +245,13 @@ impl Generator {
             let query =
                 cynic_parser::parse_executable_document(query).map_err(Error::QueryParseError)?;
 
-            let type_index = Rc::new(TypeIndex::from_schema(
-                &generator.schema,
-                generator.typename_id,
-            ));
-            let mut parsed_output =
-                query_parsing::parse_query_document(&query, &type_index, &generator.overrides)?;
+            let graph = graph::Graph::new(&query, &generator.schema, generator.typename_id);
+
+            let reader = graph.reader(&query, &generator.schema);
+
+            // println!("{}", reader.dbg_dot());
+
+            let mut parsed_output = graph_to_output(reader, &generator.overrides)?;
 
             add_schema_name(&mut parsed_output, generator.schema_name.as_deref());
 
@@ -263,12 +267,12 @@ impl Generator {
                     )
                 })
                 .collect();
-            for variables_struct in parsed_output.variables_structs {
+            for variable_struct in parsed_output.variable_structs.structs {
                 writeln!(
                     output,
                     "{}",
                     output::VariablesStructForDisplay {
-                        variables_struct: &variables_struct,
+                        variable_struct: &variable_struct,
                         input_objects_need_lifetime: &input_objects_need_lifetime
                     }
                 )
@@ -342,7 +346,6 @@ pub fn document_to_fragment_structs(
     if let Some(schema_name) = &options.schema_name {
         generator.set_schema_name(schema_name);
     }
-    // TODO: use options
     generator.generate(query)
 }
 

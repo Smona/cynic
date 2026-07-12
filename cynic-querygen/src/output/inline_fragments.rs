@@ -6,7 +6,6 @@ use super::indented;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InlineFragments {
-    // TODO: Should this be a string?
     pub inner_type_names: Vec<String>,
     pub target_type: String,
     pub variable_struct_name: Option<String>,

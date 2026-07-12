@@ -1,20 +1,22 @@
-use std::fmt::Write;
+use std::{
+    borrow::Cow,
+    fmt::{self, Write},
+};
+
+use cynic_parser::common::{TypeWrappers, WrappingType};
 
 use crate::{
     casings::CasingExt,
+    graph::{self, TypedValue},
     output::{attr_output::Attributes, field::rust_field_name},
-    query_parsing::{Directive, LiteralContext},
-    schema::{InputType, TypeSpec},
+    schema::TypeSpec,
 };
 
-use {
-    super::indented,
-    crate::{Error, query_parsing::TypedValue, schema::OutputFieldType},
-};
+use super::indented;
 
-#[derive(Debug, PartialEq)]
-pub struct QueryFragment<'query, 'schema> {
-    pub fields: Vec<OutputField<'query, 'schema>>,
+#[derive(Debug)]
+pub struct QueryFragment<'a> {
+    pub fields: Vec<OutputField<'a>>,
     pub target_type: String,
     pub variable_struct_name: Option<String>,
     pub schema_name: Option<String>,
@@ -22,7 +24,7 @@ pub struct QueryFragment<'query, 'schema> {
     pub name: String,
 }
 
-impl std::fmt::Display for QueryFragment<'_, '_> {
+impl std::fmt::Display for QueryFragment<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "#[derive(cynic::QueryFragment, Debug)]")?;
 
@@ -49,69 +51,69 @@ impl std::fmt::Display for QueryFragment<'_, '_> {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct OutputField<'query, 'schema> {
-    pub name: &'schema str,
-    pub rename: Option<&'schema str>,
+#[derive(Debug)]
+pub struct OutputField<'a> {
+    pub selection: crate::graph::Selection<'a>,
+    pub name: Cow<'a, str>,
+    pub rename: Option<&'a str>,
     pub field_type: RustOutputFieldType,
-
-    pub arguments: Vec<FieldArgument<'query, 'schema>>,
-    pub directives: Vec<Directive<'query, 'schema>>,
 }
 
-impl std::fmt::Display for OutputField<'_, '_> {
+impl std::fmt::Display for OutputField<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if !self.arguments.is_empty() {
-            let arguments_string = self
-                .arguments
-                .iter()
-                .map(|arg| Ok(format!("{}: {}", arg.name, arg.to_literal()?)))
-                .collect::<Result<Vec<_>, Error>>()
-                // TODO: This unwrap needs ditched somehow...
-                .unwrap()
-                .join(", ");
-
-            writeln!(f, "#[arguments({})]", arguments_string)?;
-        }
-        if !self.directives.is_empty() {
-            let directive_string = self
-                .directives
-                .iter()
-                .map(|directive| {
-                    let Directive { name, arguments } = directive;
-                    if arguments.is_empty() {
-                        return name.to_string();
-                    }
-                    let argument_strings = arguments
-                        .iter()
-                        .map(|argument| {
-                            Ok(format!(
-                                "{}: {}",
-                                argument.name,
-                                argument.value.to_literal(LiteralContext::Argument)?
-                            ))
-                        })
-                        .collect::<Result<Vec<_>, Error>>()
-                        .unwrap()
-                        .join(", ");
-
-                    format!("{name}({argument_strings})")
-                })
-                .collect::<Vec<_>>()
-                .join(", ");
-
-            writeln!(f, "#[directives({directive_string})]")?;
-        }
-
         let name = self.name.to_snake_case();
         let type_spec = TypeSpec {
-            name: self.field_type.type_spec().into(),
+            name: self.field_type.to_string().into(),
             contains_lifetime_a: false,
         };
         let mut output = super::Field::new(&name, &type_spec);
 
         if let Some(rename) = self.rename {
             output.add_rename(rename);
+        }
+
+        match &self.selection {
+            graph::Selection::Field(field) => {
+                if field.arguments().len() != 0 {
+                    let arguments_string = field
+                        .arguments()
+                        .map(|arg| format!("{}: {}", arg.name(), arg.value().into_literal()))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    writeln!(f, "#[arguments({})]", arguments_string)?;
+                }
+                if field.directives().len() != 0 {
+                    let directive_string = field
+                        .directives()
+                        .map(|directive| {
+                            let name = directive.name();
+                            if directive.arguments().len() == 0 {
+                                return name.to_string();
+                            }
+                            let argument_strings = directive
+                                .arguments()
+                                .map(|argument| {
+                                    format!(
+                                        "{}: {}",
+                                        argument.name(),
+                                        argument.value().into_literal()
+                                    )
+                                })
+                                .collect::<Vec<_>>()
+                                .join(", ");
+
+                            format!("{name}({argument_strings})")
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    writeln!(f, "#[directives({directive_string})]")?;
+                }
+            }
+            graph::Selection::Spread(_) => {
+                output.add_spread();
+            }
         }
 
         write!(f, "{}", output)
@@ -121,155 +123,157 @@ impl std::fmt::Display for OutputField<'_, '_> {
 /// An OutputFieldType that has been given a rust-land name.  Allows for
 /// the fact that there may be several rust structs that refer to the same
 /// schema type.
-#[derive(Debug, PartialEq)]
-#[allow(clippy::enum_variant_names)]
-pub enum RustOutputFieldType {
-    NamedType(String),
-    ListType(Box<RustOutputFieldType>),
-    NonNullType(Box<RustOutputFieldType>),
+#[derive(Debug)]
+pub struct RustOutputFieldType {
+    pub name: String,
+    pub wrappers: TypeWrappers,
 }
 
-impl RustOutputFieldType {
-    pub fn from_schema_type(
-        schema_type: &OutputFieldType<'_>,
-        name_override: Option<String>,
-    ) -> RustOutputFieldType {
-        match schema_type {
-            OutputFieldType::NonNullType(inner) => RustOutputFieldType::NonNullType(Box::new(
-                RustOutputFieldType::from_schema_type(inner, name_override),
-            )),
-            OutputFieldType::ListType(inner) => RustOutputFieldType::ListType(Box::new(
-                RustOutputFieldType::from_schema_type(inner, name_override),
-            )),
-            OutputFieldType::NamedType(type_ref) => RustOutputFieldType::NamedType(
-                name_override
-                    .or_else(|| {
-                        let ty = type_ref.lookup().ok()?;
-                        Some(ty.name().to_pascal_case())
-                    })
-                    .unwrap_or_else(|| "Unknown".to_string()),
-            ),
-        }
-    }
-
-    pub fn type_spec(&self) -> String {
-        self.output_type_spec_imp(true)
-    }
-
-    fn output_type_spec_imp(&self, nullable: bool) -> String {
-        if let RustOutputFieldType::NonNullType(inner) = self {
-            return inner.output_type_spec_imp(false);
-        }
-
-        if nullable {
-            return format!("Option<{}>", self.output_type_spec_imp(false));
-        }
-
-        match self {
-            RustOutputFieldType::ListType(inner) => {
-                format!("Vec<{}>", inner.output_type_spec_imp(true))
-            }
-
-            RustOutputFieldType::NonNullType(_) => panic!("NonNullType somehow got past an if let"),
-
-            RustOutputFieldType::NamedType(s) => {
-                match s.as_ref() {
-                    "Int" => return "i32".into(),
-                    "Float" => return "f64".into(),
-                    "Boolean" => return "bool".into(),
-                    // Technically the name is "ID" in graphql, but we've already pascal
-                    // cased it
-                    "Id" => return "cynic::Id".into(),
-                    _ => {}
+impl fmt::Display for RustOutputFieldType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut nullable = true;
+        let mut n_brackets = 0;
+        for wrapper in self.wrappers.iter() {
+            match wrapper {
+                WrappingType::NonNull => {
+                    nullable = false;
                 }
-
-                s.clone()
+                WrappingType::List => {
+                    if nullable {
+                        write!(f, "Option<")?;
+                        n_brackets += 1;
+                    }
+                    nullable = true;
+                    n_brackets += 1;
+                    write!(f, "Vec<")?;
+                }
             }
         }
+        if nullable {
+            write!(f, "Option<")?;
+            n_brackets += 1;
+        }
+        match self.name.as_ref() {
+            "Int" => write!(f, "i32")?,
+            "Float" => write!(f, "f64")?,
+            "Boolean" => write!(f, "bool")?,
+            // The actual GraphQL type here is Id but we've already pascal cased it here...
+            "Id" => write!(f, "cynic::Id")?,
+            name => write!(f, "{name}")?,
+        }
+
+        for _ in 0..n_brackets {
+            write!(f, ">")?;
+        }
+
+        Ok(())
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct FieldArgument<'query, 'schema> {
-    pub name: &'schema str,
-    value: TypedValue<'query, 'schema>,
-}
-
-impl<'query, 'schema> FieldArgument<'query, 'schema> {
-    pub fn new(name: &'schema str, value: TypedValue<'query, 'schema>) -> Self {
-        FieldArgument { name, value }
-    }
-
-    pub fn to_literal(&self) -> Result<String, Error> {
-        self.value.to_literal(LiteralContext::Argument)
-    }
-}
-
-impl TypedValue<'_, '_> {
-    pub fn to_literal(&self, _context: LiteralContext) -> Result<String, Error> {
-        Ok(match self {
-            TypedValue::Variable {
-                name,
-                field_type: _,
-                value_type: _,
-            } => {
-                let name = name.to_snake_case();
+impl TypedValue<'_> {
+    fn into_literal(self) -> String {
+        match self {
+            TypedValue::Variable(variable) => {
+                let name = variable.name().to_snake_case();
                 let name = rust_field_name(&name);
                 format!("${name}")
             }
-            TypedValue::Int(num, _) => num.to_string(),
-            TypedValue::Float(num, _) => num
-                .map(|d| d.to_string())
-                .unwrap_or_else(|| "null".to_string()),
-            TypedValue::String(s, _) => {
+            TypedValue::Int(inner) => inner.value.to_string(),
+            TypedValue::Float(inner) => inner.value.to_string(),
+            TypedValue::String(inner) => {
+                let s = inner.value.as_str();
                 if string_needs_raw_literal(s) {
                     format!("r#\"{s}\"#")
                 } else {
                     format!("\"{s}\"")
                 }
             }
-            TypedValue::Boolean(b, _) => b.to_string(),
+            TypedValue::Boolean(inner) => inner.value.to_string(),
             TypedValue::Null(_) => "null".into(),
-            TypedValue::Enum(v, field_type) => {
-                if let InputType::Enum(_) = field_type.inner_ref().lookup()? {
-                    format!("\"{v}\"")
-                } else {
-                    return Err(Error::ArgumentNotEnum);
-                }
+            TypedValue::Enum(inner) => {
+                format!("\"{}\"", inner.value.as_str())
             }
-            TypedValue::List(values, _) => {
-                let inner = values
-                    .iter()
-                    .map(|v| v.to_literal(LiteralContext::ListItem))
-                    .collect::<Result<Vec<_>, Error>>()?
+            TypedValue::List(list) => {
+                let inner = list
+                    .items()
+                    .map(|v| v.into_literal())
+                    .collect::<Vec<_>>()
                     .join(", ");
 
                 format!("[{inner}]")
             }
-            TypedValue::Object(object_literal, field_type) => {
-                if let InputType::InputObject(_) = field_type.inner_ref().lookup()? {
-                    let fields = object_literal
-                        .iter()
-                        .map(|(name, value)| {
-                            Ok(format!(
-                                "{}: {}",
-                                name,
-                                value.to_literal(LiteralContext::InputObjectField)?
-                            ))
-                        })
-                        .collect::<Result<Vec<_>, Error>>()?;
+            TypedValue::Object(obj) => {
+                let fields = obj
+                    .fields()
+                    .map(|field| format!("{}: {}", field.name(), field.value().into_literal()))
+                    .collect::<Vec<_>>();
 
-                    let fields = fields.join(", ");
+                let fields = fields.join(", ");
 
-                    format!("{{ {fields} }}")
-                } else {
-                    return Err(Error::ArgumentNotInputObject);
-                }
+                format!("{{ {fields} }}")
             }
-        })
+        }
     }
 }
 
 fn string_needs_raw_literal(s: &str) -> bool {
     s.chars().any(|c| c.is_ascii_control() || c == '"')
+}
+
+#[cfg(test)]
+mod tests {
+    use cynic_parser::common::TypeWrappers;
+
+    use crate::output::query_fragment::RustOutputFieldType;
+
+    #[test]
+    fn rust_output_field_type_display() {
+        assert_eq!(
+            RustOutputFieldType {
+                name: "Id".into(),
+                wrappers: TypeWrappers::default().wrap_non_null()
+            }
+            .to_string(),
+            "cynic::Id"
+        );
+
+        assert_eq!(
+            RustOutputFieldType {
+                name: "Foo".into(),
+                wrappers: TypeWrappers::default()
+            }
+            .to_string(),
+            "Option<Foo>"
+        );
+
+        assert_eq!(
+            RustOutputFieldType {
+                name: "Foo".into(),
+                wrappers: TypeWrappers::default().wrap_list()
+            }
+            .to_string(),
+            "Option<Vec<Option<Foo>>>"
+        );
+
+        assert_eq!(
+            RustOutputFieldType {
+                name: "Foo".into(),
+                wrappers: TypeWrappers::default().wrap_non_null().wrap_list()
+            }
+            .to_string(),
+            "Option<Vec<Foo>>"
+        );
+
+        assert_eq!(
+            RustOutputFieldType {
+                name: "Foo".into(),
+                wrappers: TypeWrappers::default()
+                    .wrap_non_null()
+                    .wrap_list()
+                    .wrap_non_null()
+            }
+            .to_string(),
+            "Vec<Foo>"
+        );
+    }
 }

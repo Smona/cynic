@@ -1,18 +1,17 @@
-use crate::{casings::CasingExt, output::attr_output::Attributes};
+use crate::{casings::CasingExt, graph::EnumDefinition, output::attr_output::Attributes};
 use std::fmt::Write;
 
 use super::indented;
-use crate::schema::EnumDetails;
 
 pub struct Enum<'a> {
-    pub details: EnumDetails<'a>,
+    pub definition: EnumDefinition<'a>,
 
     pub schema_name: Option<String>,
 }
 
 impl std::fmt::Display for Enum<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let type_name = self.details.name;
+        let type_name = self.definition.name();
 
         writeln!(f, "#[derive(cynic::Enum, Clone, Copy, Debug)]")?;
 
@@ -27,16 +26,17 @@ impl std::fmt::Display for Enum<'_> {
         write!(f, "{attributes}")?;
         writeln!(f, "pub enum {} {{", type_name.to_pascal_case())?;
 
-        for variant in &self.details.values {
+        for variant in self.definition.values() {
             let mut f = indented(f, 4);
 
-            if variant.to_pascal_case().to_screaming_snake_case() != *variant {
+            let value = variant.value();
+            if value.to_pascal_case().to_screaming_snake_case() != value {
                 // If a pascal -> screaming snake casing roundtrip is not lossless
                 // we need to explicitly rename this variant
-                writeln!(f, "#[cynic(rename = \"{}\")]", variant)?;
+                writeln!(f, "#[cynic(rename = \"{value}\")]")?;
             }
 
-            writeln!(f, "{},", variant.to_pascal_case())?;
+            writeln!(f, "{},", value.to_pascal_case())?;
         }
         writeln!(f, "}}")
     }

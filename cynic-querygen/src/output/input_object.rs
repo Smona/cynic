@@ -2,11 +2,12 @@ mod variant;
 
 use std::fmt::Write;
 
-use crate::{casings::CasingExt, output::attr_output::Attributes, schema};
+use crate::{
+    casings::CasingExt, graph::InputValueDefinition, output::attr_output::Attributes, schema,
+};
 
 use super::indented;
 
-#[derive(Debug, PartialEq, Eq)]
 pub struct InputObject<'schema> {
     pub name: String,
     pub fields: Vec<InputObjectField<'schema>>,
@@ -14,9 +15,9 @@ pub struct InputObject<'schema> {
     pub is_oneof: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone)]
 pub struct InputObjectField<'schema> {
-    pub schema_field: schema::InputField<'schema>,
+    pub schema_field: InputValueDefinition<'schema>,
     pub type_spec: schema::TypeSpec<'static>,
 }
 
@@ -46,13 +47,13 @@ impl std::fmt::Display for InputObject<'_> {
             for field in self.fields.iter() {
                 let mut f = indented(f, 4);
 
-                let name = field.schema_field.name.to_pascal_case();
+                let name = field.schema_field.name().to_pascal_case();
                 let mut output = variant::Variant::new(&name, &field.type_spec);
 
-                if name.to_snake_case() != field.schema_field.name {
+                if name.to_snake_case() != field.schema_field.name() {
                     // If a snake -> pascal casing roundtrip is not lossless
                     // we need to explicitly rename this field
-                    output.add_rename(field.schema_field.name);
+                    output.add_rename(field.schema_field.name());
                 }
 
                 write!(f, "{}", output)?;
@@ -70,13 +71,13 @@ impl std::fmt::Display for InputObject<'_> {
             for field in self.fields.iter() {
                 let mut f = indented(f, 4);
 
-                let name = field.schema_field.name.to_snake_case();
+                let name = field.schema_field.name().to_snake_case();
                 let mut output = super::Field::new(&name, &field.type_spec);
 
-                if name.to_camel_case() != field.schema_field.name {
+                if name.to_camel_case() != field.schema_field.name() {
                     // If a snake -> camel casing roundtrip is not lossless
                     // we need to explicitly rename this field
-                    output.add_rename(field.schema_field.name);
+                    output.add_rename(field.schema_field.name());
                 }
 
                 write!(f, "{}", output)?;

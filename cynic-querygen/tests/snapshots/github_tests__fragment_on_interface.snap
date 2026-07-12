@@ -1,25 +1,17 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
-pub struct Node {
+pub struct Query {
+    #[arguments(ids: ["123"])]
+    pub nodes: Vec<Option<NodeInfo>>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Node")]
+pub struct NodeInfo {
     pub __typename: String,
     pub id: cynic::Id,
 }
-
-#[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Query")]
-pub struct UnnamedQuery {
-    #[arguments(ids: ["123"])]
-    pub nodes: Vec<Option<Node>>,
-}
-
-#[derive(cynic::InlineFragments, Debug)]
-pub enum Node {
-    Node(Node),
-    #[cynic(fallback)]
-    Unknown
-}
-
-

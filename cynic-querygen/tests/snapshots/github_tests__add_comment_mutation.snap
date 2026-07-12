@@ -1,6 +1,7 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryVariables, Debug)]
 pub struct CommentOnMutationSupportIssueVariables<'a> {
@@ -10,7 +11,7 @@ pub struct CommentOnMutationSupportIssueVariables<'a> {
 #[derive(cynic::QueryFragment, Debug)]
 #[cynic(graphql_type = "Mutation", variables = "CommentOnMutationSupportIssueVariables")]
 pub struct CommentOnMutationSupportIssue {
-    #[arguments(input: { body: $comment_body, subjectId: "MDU6SXNzdWU2ODU4NzUxMzQ=" })]
+    #[arguments(input: { subjectId: "MDU6SXNzdWU2ODU4NzUxMzQ=", body: $comment_body })]
     pub add_comment: Option<AddCommentPayload>,
 }
 
@@ -28,5 +29,3 @@ pub struct IssueCommentEdge {
 pub struct IssueComment {
     pub id: cynic::Id,
 }
-
-

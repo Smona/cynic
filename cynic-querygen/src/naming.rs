@@ -1,18 +1,24 @@
 use std::{collections::HashMap, hash::Hash};
 
-pub trait Nameable: Eq + Hash {
+pub trait Nameable {
+    type Id: Eq + Hash;
+
+    fn id(&self) -> Self::Id;
     fn requested_name(&self) -> String;
 }
 
 #[derive(Debug)]
-pub struct Namer<Subject> {
-    named_subjects: HashMap<Subject, String>,
+pub struct Namer<Subject>
+where
+    Subject: Nameable,
+{
+    named_subjects: HashMap<Subject::Id, String>,
     used_names: HashMap<String, u16>,
 }
 
 impl<Subject> Namer<Subject>
 where
-    Subject: Nameable + Clone,
+    Subject: Nameable,
 {
     pub fn new() -> Namer<Subject> {
         Namer {
@@ -21,12 +27,8 @@ where
         }
     }
 
-    pub fn force_name(&mut self, subject: &Subject, name: impl Into<String>) -> String {
-        self.impl_naming(subject, name.into())
-    }
-
     pub fn name_subject(&mut self, subject: &Subject) -> String {
-        if let Some(name) = self.named_subjects.get(subject) {
+        if let Some(name) = self.named_subjects.get(&subject.id()) {
             return name.clone();
         }
 
@@ -42,7 +44,7 @@ where
             format!("{}{}", requested_name, used_count)
         };
 
-        self.named_subjects.insert(subject.clone(), name.clone());
+        self.named_subjects.insert(subject.id(), name.clone());
 
         name
     }
@@ -52,31 +54,36 @@ where
 mod tests {
     use super::*;
 
-    #[derive(Hash, PartialEq, Eq, Clone)]
     struct NamedThing {
+        id: i32,
         my_name: String,
-        other_field: String,
     }
 
     impl Nameable for NamedThing {
+        type Id = i32;
+
         fn requested_name(&self) -> String {
             self.my_name.to_owned()
+        }
+
+        fn id(&self) -> Self::Id {
+            self.id
         }
     }
 
     #[test]
     fn test_naming() {
         let thing_one = NamedThing {
+            id: 0,
             my_name: "Thing".into(),
-            other_field: "xyz".into(),
         };
         let thing_two = NamedThing {
+            id: 1,
             my_name: "Thing".into(),
-            other_field: "abc".into(),
         };
         let other_thing = NamedThing {
+            id: 2,
             my_name: "OtherThing".into(),
-            other_field: "asd".into(),
         };
 
         let mut namer = Namer::new();
@@ -90,23 +97,5 @@ mod tests {
         assert_eq!(namer.name_subject(&other_thing), "OtherThing");
         assert_eq!(namer.name_subject(&thing_two), "Thing2");
         assert_eq!(namer.name_subject(&thing_one), "Thing");
-    }
-
-    #[test]
-    fn test_force_name() {
-        let thing_one = NamedThing {
-            my_name: "Thing".into(),
-            other_field: "xyz".into(),
-        };
-        let thing_two = NamedThing {
-            my_name: "Thing".into(),
-            other_field: "abc".into(),
-        };
-
-        let mut namer = Namer::new();
-        namer.force_name(&thing_one, "DifferentName");
-
-        assert_eq!(namer.name_subject(&thing_two), "Thing");
-        assert_eq!(namer.name_subject(&thing_one), "DifferentName");
     }
 }

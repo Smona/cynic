@@ -1,15 +1,15 @@
 ---
 source: cynic-querygen/tests/misc-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed for recursive input lifetimes test\")"
+expression: "cynic_querygen::Generator::new(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed for recursive input lifetimes test\")"
 snapshot_kind: text
 ---
 #[derive(cynic::QueryVariables, Debug)]
 pub struct TestRecursiveInputLifetimesVariables<'a> {
     pub direct: ComplexRecursiveInput<'a>,
-    pub list_direct: Vec<ComplexRecursiveInput<'a>>,
-    pub list_opt: Vec<Option<ComplexRecursiveInput<'a>>>,
     pub opt_direct: Option<ComplexRecursiveInput<'a>>,
+    pub list_direct: Vec<ComplexRecursiveInput<'a>>,
     pub opt_list_direct: Option<Vec<ComplexRecursiveInput<'a>>>,
+    pub list_opt: Vec<Option<ComplexRecursiveInput<'a>>>,
     pub opt_list_opt: Option<Vec<Option<ComplexRecursiveInput<'a>>>>,
 }
 

@@ -1,6 +1,7 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryVariables, Debug)]
 pub struct RepoIssuesVariables {
@@ -34,17 +35,17 @@ pub struct PullRequest {
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "PullRequest", variables = "RepoIssuesVariables")]
-pub struct PullRequest2 {
-    pub body: String,
+#[cynic(variables = "RepoIssuesVariables")]
+pub struct Issue {
+    pub closed: bool,
     #[arguments(first: $first)]
     pub assignees: UserConnection,
 }
 
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(variables = "RepoIssuesVariables")]
-pub struct Issue {
-    pub closed: bool,
+#[cynic(graphql_type = "PullRequest", variables = "RepoIssuesVariables")]
+pub struct PullRequest2 {
+    pub body: String,
     #[arguments(first: $first)]
     pub assignees: UserConnection,
 }
@@ -79,5 +80,3 @@ pub enum IssueOrPullRequest2 {
     #[cynic(fallback)]
     Unknown
 }
-
-

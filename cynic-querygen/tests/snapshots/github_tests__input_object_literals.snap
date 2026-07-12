@@ -1,6 +1,7 @@
 ---
 source: cynic-querygen/tests/github-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen :: Generator ::\nnew(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
 #[cynic(graphql_type = "Query")]
@@ -11,7 +12,7 @@ pub struct PullRequestTitles {
 
 #[derive(cynic::QueryFragment, Debug)]
 pub struct Repository {
-    #[arguments(orderBy: { direction: "ASC", field: "CREATED_AT" })]
+    #[arguments(orderBy: { field: "CREATED_AT", direction: "ASC" })]
     pub pull_requests: PullRequestConnection,
 }
 
@@ -24,5 +25,3 @@ pub struct PullRequestConnection {
 pub struct PullRequest {
     pub title: String,
 }
-
-

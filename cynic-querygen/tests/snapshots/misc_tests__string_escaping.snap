@@ -1,10 +1,10 @@
 ---
 source: cynic-querygen/tests/misc-tests.rs
-expression: "document_to_fragment_structs(query, schema,\n        &QueryGenOptions::default()).expect(\"QueryGen Failed\")"
+expression: "cynic_querygen::Generator::new(schema).expect(\"schema parse failed\").generate(query).expect(\"QueryGen Failed\")"
+snapshot_kind: text
 ---
 #[derive(cynic::QueryFragment, Debug)]
-#[cynic(graphql_type = "Foo")]
-pub struct UnnamedQuery {
+pub struct Foo {
     #[arguments(input: r#"Hello
      There"#)]
     #[cynic(rename = "fieldWithStringArg")]
@@ -13,5 +13,3 @@ pub struct UnnamedQuery {
     #[cynic(rename = "fieldWithStringArg")]
     pub two: Option<i32>,
 }
-
-
