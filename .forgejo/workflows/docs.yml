@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - v*
+  workflow_dispatch:
 
 jobs:
   publish-docs:
@@ -14,7 +15,7 @@ jobs:
       - uses: https://github.com/dtolnay/rust-toolchain@1.85.0
         with:
           components: rustfmt
-          
+
       - uses: https://github.com/cargo-bins/cargo-binstall@bc432b49369a3f25c8c8b19578a82060c18a5dd6
         with:
           version: 1.17.6
@@ -39,4 +40,3 @@ jobs:
           server: grebedoc.dev
           password: ${{ secrets.CYNIC_RS_PASSWORD }}
           source: cynic-book/book/html
-
