@@ -9,6 +9,19 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+## v0.11.2 - 2026-07-12
+
+### New Features
+
+- `TypeWrappers` is now `Clone`, `Copy`, `PartialEq` & `Eq`
+- `Object` & `List` are now `Eq`
+- Added `is_` & `as_` accessor functions to `TypeDefinition`
+- Added `is_*` and `as_*` accessor functions to executable::Selection ([#1216](https://codeberg.org/obmarg/cynic/pulls/1216))
+
+### Bug Fixes
+
+- fix panic in source call on EmptySchemaCoordinate ([#1217](https://codeberg.org/obmarg/cynic/pulls/1217))
+
 ## v0.11.1 - 2026-04-11
 
 ### New Features

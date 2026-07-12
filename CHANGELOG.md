@@ -8,6 +8,22 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+## v3.14.0 - 2026-07-12
+
+### New Features
+
+- StreamingOperation now exposes its query, variables & operation_name
+
+### Changes
+
+- The generator had a very large refactor in this release, so expect some minor changes to its output.
+  - In particular some things will be in a slightly different order and some calcaulated names may have changed.
+- The names of fragments should now be preserved in generator output
+- Vastly improved handling of fragments in generator ([#1218](https://codeberg.org/obmarg/cynic/pulls/1218))
+- Correctly deal with interfaces in the generator ([#1219](https://codeberg.org/obmarg/cynic/pulls/1219))
+
+### Bug Fixes
+
 ## v3.13.2 - 2026-04-11
 
 ### Bug Fixes
