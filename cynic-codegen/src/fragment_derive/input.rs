@@ -296,6 +296,14 @@ impl FragmentDeriveField {
         *self.raw_field.spread
     }
 
+    pub(super) fn flatten(&self) -> bool {
+        *self.raw_field.flatten
+    }
+
+    pub(super) fn ty(&self) -> &syn::Type {
+        &self.raw_field.ty
+    }
+
     pub(super) fn ident(&self) -> Option<&proc_macro2::Ident> {
         self.raw_field.ident.as_ref()
     }

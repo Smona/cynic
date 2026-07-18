@@ -196,7 +196,7 @@ This `operation` can then be used in exactly the same way as with queries.
 
 Directives can be provided using the `directive` attribute:
 
-```
+```rust
 #[cynic(
     graphql_type = "Root",
     variables = "FilmQueryVariables"
@@ -219,6 +219,26 @@ handle this smoothly, Cynic matches rust fields up to their equivalent
 `camelCase` GraphQL fields. This behaviour can be disabled by
 specifying a `rename_all = "None"` attribute, or customised via alternative
 `rename_all` values or individual `rename` attributes on the fields.
+
+### Generics
+
+A `QueryFragment` can use generic parameters for one of its fields:
+
+```rust
+#[cynic(
+    graphql_type = "Root",
+    variables = "FilmQueryVariables"
+)]
+struct FilmQuery<T> {
+    #[arguments(id: $id)]
+    film: Option<T>,
+}
+```
+
+Any `T` provided to `FilmQuery` here must be a `QueryFragment` for the `Film`
+type. Cynic will attempt to generate the correct bounds for this, although
+this functionality is experimental and additional bounds may need to be added
+by hand.
 
 #### Struct Attributes
 
