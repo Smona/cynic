@@ -113,9 +113,20 @@ pub struct Generator {
     /// The override type must be a registered [custom scalar](https://cynic-rs.dev/derives/scalars#custom-scalars) for the schema scalar type
     /// of the overridden field.
     overrides: OverrideMap,
+    /// Mapping of `("ScalarName", "fully::qualified::type::Path")` used to set the default Rust
+    /// type generated for each GraphQL scalar.
+    ///
+    /// When set, no scalar definition is emitted for the named scalar and every occurrence of it
+    /// (in query fragments, input objects and variable structs) will use the provided Rust type.
+    ///
+    /// The default type must be a registered [custom scalar](https://cynic-rs.dev/derives/scalars#custom-scalars)
+    /// for the schema scalar type, and must be `'static` (i.e. not contain any non-`'static`
+    /// lifetimes).
+    scalar_types: ScalarTypeMap,
 }
 
-type OverrideMap = HashMap<SchemaCoordinate, String>;
+pub(crate) type OverrideMap = HashMap<SchemaCoordinate, String>;
+pub(crate) type ScalarTypeMap = HashMap<String, String>;
 
 impl Generator {
     pub fn new(schema: impl AsRef<str>) -> Result<Self, SchemaParseError> {
@@ -127,6 +138,7 @@ impl Generator {
             schema,
             typename_id,
             overrides: HashMap::default(),
+            scalar_types: HashMap::default(),
         })
     }
 
@@ -237,6 +249,68 @@ impl Generator {
         Ok(())
     }
 
+    /// Sets the default Rust type used for each occurence of this GraphQL scalar.
+    ///
+    /// This will change the generated type used in query fragments, input objects
+    /// and variable structs. When set for a scalar, no type definition will be
+    /// emitted for it.
+    ///
+    /// Field-level type overrides set by [`Generator::with_override`] will still
+    /// override these types.
+    ///
+    /// The replacement type must be a registered [custom scalar][1] for the
+    /// given schema scalar, and must be `'static` (i.e. not contain any non-`'static`
+    /// lifetimes).
+    ///
+    /// [1]: https://cynic-rs.dev/derives/scalars#custom-scalars
+    pub fn with_scalar_type(
+        mut self,
+        scalar_name: impl Into<String>,
+        rust_type: impl Into<String>,
+    ) -> Self {
+        self.set_scalar_type(scalar_name, rust_type);
+        self
+    }
+
+    /// Sets the default Rust type used for many GraphQL scalars.
+    ///
+    /// See [`Generator::with_scalar_type`] for more details.
+    pub fn with_scalar_types<Iter, ScalarName, RustType>(mut self, iter: Iter) -> Self
+    where
+        Iter: IntoIterator<Item = (ScalarName, RustType)>,
+        ScalarName: Into<String>,
+        RustType: Into<String>,
+    {
+        self.set_scalar_types(iter);
+        self
+    }
+
+    /// Sets the default Rust type used for a GraphQL scalar.
+    ///
+    /// See [`Generator::with_scalar_type`] for more details.
+    pub fn set_scalar_type(
+        &mut self,
+        scalar_name: impl Into<String>,
+        rust_type: impl Into<String>,
+    ) {
+        self.scalar_types
+            .insert(scalar_name.into(), rust_type.into());
+    }
+
+    /// Sets the default Rust type used for many GraphQL scalars.
+    ///
+    /// See [`Generator::with_scalar_type`] for more details.
+    pub fn set_scalar_types<Iter, ScalarName, RustType>(&mut self, iter: Iter)
+    where
+        Iter: IntoIterator<Item = (ScalarName, RustType)>,
+        ScalarName: Into<String>,
+        RustType: Into<String>,
+    {
+        for (scalar_name, rust_type) in iter.into_iter() {
+            self.set_scalar_type(scalar_name, rust_type);
+        }
+    }
+
     /// Generates rust code for the provided query
     pub fn generate(&self, query: impl AsRef<str>) -> Result<String, Error> {
         fn generate_impl(generator: &Generator, query: &str) -> Result<String, Error> {
@@ -251,7 +325,8 @@ impl Generator {
 
             // println!("{}", reader.dbg_dot());
 
-            let mut parsed_output = graph_to_output(reader, &generator.overrides)?;
+            let mut parsed_output =
+                graph_to_output(reader, &generator.overrides, &generator.scalar_types)?;
 
             add_schema_name(&mut parsed_output, generator.schema_name.as_deref());
 
@@ -273,7 +348,8 @@ impl Generator {
                     "{}",
                     output::VariablesStructForDisplay {
                         variable_struct: &variable_struct,
-                        input_objects_need_lifetime: &input_objects_need_lifetime
+                        input_objects_need_lifetime: &input_objects_need_lifetime,
+                        scalar_types: &generator.scalar_types,
                     }
                 )
                 .unwrap();

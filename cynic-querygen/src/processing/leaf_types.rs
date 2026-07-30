@@ -4,13 +4,14 @@ use itertools::Itertools;
 
 use super::{graph::GraphReader, inputs::InputObjects};
 use crate::{
-    Error,
     graph::{EnumDefinition, ScalarDefinition, TypeDefinition},
+    Error, ScalarTypeMap,
 };
 
 pub fn extract_leaf_types<'a>(
     graph: GraphReader<'a>,
     inputs: &InputObjects<'a>,
+    scalar_types: &ScalarTypeMap,
 ) -> Result<(Vec<EnumDefinition<'a>>, Vec<ScalarDefinition<'a>>), Error> {
     let mut leaf_types = graph
         .leaf_fields()
@@ -39,7 +40,7 @@ pub fn extract_leaf_types<'a>(
     for name in leaf_types.into_iter().unique() {
         match graph.type_definition(name) {
             Some(TypeDefinition::Scalar(s)) => {
-                if scalar_is_builtin(s) {
+                if scalar_is_builtin(s) || scalar_types.contains_key(s.name()) {
                     continue;
                 }
                 scalars.push(s);

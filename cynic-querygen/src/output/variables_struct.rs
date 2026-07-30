@@ -4,10 +4,12 @@ use crate::casings::CasingExt;
 
 use crate::processing::{VariableStruct, VariableStructField};
 use crate::schema::TypeSpec;
+use crate::ScalarTypeMap;
 
 fn type_spec<'a>(
     field: &'a VariableStructField,
     input_objects_need_lifetime: &HashMap<&str, bool>,
+    scalar_types: &ScalarTypeMap,
 ) -> TypeSpec<'a> {
     match field {
         VariableStructField::Variable(var) => TypeSpec::for_executable_type(
@@ -16,6 +18,7 @@ fn type_spec<'a>(
                 .get(var.ty().name())
                 .copied()
                 .unwrap_or(false),
+            scalar_types.get(var.ty().name()).map(|s| s.as_str()),
         ),
         VariableStructField::NestedStruct { name } => TypeSpec {
             name: Cow::Borrowed(name),
@@ -27,12 +30,13 @@ fn type_spec<'a>(
     }
 }
 
-pub struct VariablesStructForDisplay<'v, 'i, 'q> {
+pub struct VariablesStructForDisplay<'v, 'i, 'q, 's> {
     pub variable_struct: &'v VariableStruct<'q>,
     pub input_objects_need_lifetime: &'i HashMap<&'i str, bool>,
+    pub scalar_types: &'s ScalarTypeMap,
 }
 
-impl std::fmt::Display for VariablesStructForDisplay<'_, '_, '_> {
+impl std::fmt::Display for VariablesStructForDisplay<'_, '_, '_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use {super::indented, std::fmt::Write};
 
@@ -41,7 +45,7 @@ impl std::fmt::Display for VariablesStructForDisplay<'_, '_, '_> {
             .variable_struct
             .fields
             .iter()
-            .map(|field| type_spec(field, self.input_objects_need_lifetime))
+            .map(|field| type_spec(field, self.input_objects_need_lifetime, self.scalar_types))
             .collect();
         writeln!(
             f,

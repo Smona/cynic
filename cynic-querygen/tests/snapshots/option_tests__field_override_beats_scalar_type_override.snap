@@ -1,0 +1,17 @@
+---
+source: cynic-querygen/tests/option-tests.rs
+expression: "generator.generate(query).expect(\"QueryGen Failed\")"
+---
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Foo")]
+pub struct MyQuery {
+    pub clashes: Option<FieldNameClashes>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct FieldNameClashes {
+    pub str: Option<std::collections::HashMap<String, String>>,
+    pub bool: Option<bool>,
+}
+
+

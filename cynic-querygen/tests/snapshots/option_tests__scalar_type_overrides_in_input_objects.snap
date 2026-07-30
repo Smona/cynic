@@ -1,0 +1,23 @@
+---
+source: cynic-querygen/tests/option-tests.rs
+expression: "generator.generate(query).expect(\"QueryGen Failed\")"
+---
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Foo")]
+pub struct MyQuery {
+    pub clashes: Option<FieldNameClashes>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct FieldNameClashes {
+    pub str: Option<my_crate::MyString>,
+}
+
+#[derive(cynic::InputObject, Debug)]
+pub struct Baz<'a> {
+    pub id: &'a cynic::Id,
+    pub a_string: my_crate::MyString,
+    pub an_optional_string: Option<my_crate::MyString>,
+}
+
+

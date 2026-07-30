@@ -8,6 +8,10 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
 
 ## Unreleased - xxxx-xx-xx
 
+### New Features
+
+- `cynic_querygen` now supports setting the default Rust type used for a GraphQL scalar via `Generator::with_scalar_type` / `set_scalar_type` (and the plural variants). When set, every non-overridden occurrence of the scalar in the generated code uses the provided Rust type and no scalar definition is emitted for it. This currently only supports types with a `'static` lifetime.
+
 ## v3.14.0 - 2026-07-12
 
 ### New Features

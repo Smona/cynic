@@ -7,23 +7,25 @@ use inputs::InputObjects;
 
 pub use variables::{VariableStruct, VariableStructField, VariableStructs};
 
-use cynic_parser::{SchemaCoordinate, common::TypeWrappers};
+use cynic_parser::{common::TypeWrappers, SchemaCoordinate};
 
 use crate::{
-    Error, OverrideMap,
     casings::CasingExt,
     graph::SelectionTarget,
     naming::{Nameable, Namer},
     output::{self, Output},
+    Error, OverrideMap, ScalarTypeMap,
 };
 
 pub fn graph_to_output<'a>(
     graph: GraphReader<'a>,
     overrides: &OverrideMap,
+    scalar_types: &ScalarTypeMap,
 ) -> Result<Output<'a>, Error> {
     let input_objects = InputObjects::new(graph);
 
-    let (mut enums, mut scalars) = leaf_types::extract_leaf_types(graph, &input_objects)?;
+    let (mut enums, mut scalars) =
+        leaf_types::extract_leaf_types(graph, &input_objects, scalar_types)?;
 
     enums.sort_by_key(|e| e.name());
     scalars.sort_by_key(|s| s.name());
@@ -34,7 +36,15 @@ pub fn graph_to_output<'a>(
 
     let query_fragments = graph
         .query_fragments()
-        .map(|fragment| make_query_fragment(fragment, &mut namer, &variable_structs, overrides))
+        .map(|fragment| {
+            make_query_fragment(
+                fragment,
+                &mut namer,
+                &variable_structs,
+                overrides,
+                scalar_types,
+            )
+        })
         .collect::<Vec<_>>();
 
     let inline_fragments = graph
@@ -42,7 +52,7 @@ pub fn graph_to_output<'a>(
         .map(|fragment| make_inline_fragments(fragment, &mut namer, &variable_structs))
         .collect::<Vec<_>>();
 
-    let input_objects = input_objects.processed_objects();
+    let input_objects = input_objects.processed_objects(scalar_types);
 
     let enums = enums
         .into_iter()
@@ -75,6 +85,7 @@ fn make_query_fragment<'a>(
     namer: &mut Namer<FragmentId>,
     variable_struct_details: &VariableStructs<'a>,
     overrides: &OverrideMap,
+    scalar_types: &ScalarTypeMap,
 ) -> crate::output::QueryFragment<'a> {
     use self::graph::Selection;
     use crate::output::query_fragment::{OutputField, QueryFragment, RustOutputFieldType};
@@ -87,14 +98,23 @@ fn make_query_fragment<'a>(
             .map(|selection| {
                 let type_name_override = match (selection.target(), &selection) {
                     (SelectionTarget::Fragment(fragment), _) => Some(namer.name_subject(&fragment)),
-                    (SelectionTarget::Scalar(_), Selection::Field(field)) => overrides
-                        // Check for field-level type overrides using the requested fragment name (before incrementing suffix),
-                        // and un-aliased field name in the schema.
-                        .get(&SchemaCoordinate::member(
-                            requested_fragment_name.clone(),
-                            field.field_selection().name(),
-                        ))
-                        .map(|o| o.to_string()),
+                    (SelectionTarget::Scalar(_), Selection::Field(field)) => {
+                        let field_selection = field.field_selection();
+                        overrides
+                            // Check for field-level type overrides using the requested fragment name
+                            // (before incrementing suffix), and un-aliased field name in the schema.
+                            .get(&SchemaCoordinate::member(
+                                requested_fragment_name.clone(),
+                                field_selection.name(),
+                            ))
+                            .map(|o| o.to_string())
+                            // Otherwise fall back to scalar-wide type override if it exists.
+                            .or_else(|| {
+                                scalar_types
+                                    .get(field.field_definition().ty().name())
+                                    .map(|s| s.to_string())
+                            })
+                    }
                     (SelectionTarget::Scalar(_), _) => {
                         unreachable!("scalars can only appear on field selections")
                     }

@@ -14,6 +14,7 @@ impl<'a> TypeSpec<'a> {
         force_nullable: Option<bool>,
         needs_boxed: bool,
         is_subobject_with_lifetime: bool,
+        scalar_override: Option<&str>,
     ) -> TypeSpec<'static> {
         let wrappers = field.ty().wrappers().rev().collect::<Vec<_>>();
         input_type_spec_imp(
@@ -22,15 +23,24 @@ impl<'a> TypeSpec<'a> {
             force_nullable.unwrap_or(true),
             needs_boxed,
             is_subobject_with_lifetime,
+            scalar_override,
         )
     }
 
     pub fn for_executable_type(
         ty: executable::Type<'_>,
         is_subobject_with_lifetime: bool,
+        scalar_override: Option<&str>,
     ) -> TypeSpec<'static> {
         let wrappers = ty.wrappers().rev().collect::<Vec<_>>();
-        input_type_spec_imp(ty.name(), wrappers, true, false, is_subobject_with_lifetime)
+        input_type_spec_imp(
+            ty.name(),
+            wrappers,
+            true,
+            false,
+            is_subobject_with_lifetime,
+            scalar_override,
+        )
     }
 
     fn map(self, f: impl FnOnce(&str) -> String) -> TypeSpec<'static> {
@@ -62,6 +72,7 @@ fn input_type_spec_imp(
     nullable: bool,
     needs_boxed: bool,
     is_subobject_with_lifetime: bool,
+    scalar_override: Option<&str>,
 ) -> TypeSpec<'static> {
     use crate::casings::CasingExt;
 
@@ -73,6 +84,7 @@ fn input_type_spec_imp(
             false,
             needs_boxed,
             is_subobject_with_lifetime,
+            scalar_override,
         );
     }
 
@@ -83,40 +95,50 @@ fn input_type_spec_imp(
             false,
             needs_boxed,
             is_subobject_with_lifetime,
+            scalar_override,
         )
         .map(|type_spec| format!("Option<{type_spec}>",));
     }
 
     match wrappers.pop() {
-        Some(WrappingType::List) => {
-            input_type_spec_imp(name, wrappers, true, false, is_subobject_with_lifetime)
-                .map(|type_spec| format!("Vec<{type_spec}>",))
-        }
+        Some(WrappingType::List) => input_type_spec_imp(
+            name,
+            wrappers,
+            true,
+            false,
+            is_subobject_with_lifetime,
+            scalar_override,
+        )
+        .map(|type_spec| format!("Vec<{type_spec}>",)),
 
         Some(WrappingType::NonNull) => panic!("NonNullType somehow got past an if let"),
 
         None => {
             let mut contains_lifetime_a = false;
-            let mut name = match name {
-                "Int" => Cow::Borrowed("i32"),
-                "Float" => Cow::Borrowed("f64"),
-                "Boolean" => Cow::Borrowed("bool"),
-                "ID" => {
-                    contains_lifetime_a = true;
-                    Cow::Borrowed("&'a cynic::Id")
-                }
-                "String" => {
-                    contains_lifetime_a = true;
-                    Cow::Borrowed("&'a str")
-                }
-                _ => Cow::Owned({
-                    let mut type_ = name.to_pascal_case();
-                    if is_subobject_with_lifetime {
-                        type_ += "<'a>";
+            let mut name = if let Some(rust_type) = scalar_override {
+                Cow::Owned(rust_type.to_string())
+            } else {
+                match name {
+                    "Int" => Cow::Borrowed("i32"),
+                    "Float" => Cow::Borrowed("f64"),
+                    "Boolean" => Cow::Borrowed("bool"),
+                    "ID" => {
                         contains_lifetime_a = true;
+                        Cow::Borrowed("&'a cynic::Id")
                     }
-                    type_
-                }),
+                    "String" => {
+                        contains_lifetime_a = true;
+                        Cow::Borrowed("&'a str")
+                    }
+                    _ => Cow::Owned({
+                        let mut type_ = name.to_pascal_case();
+                        if is_subobject_with_lifetime {
+                            type_ += "<'a>";
+                            contains_lifetime_a = true;
+                        }
+                        type_
+                    }),
+                }
             };
 
             if needs_boxed {

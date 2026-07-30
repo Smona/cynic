@@ -5,6 +5,7 @@ use cynic_parser::executable::VariableDefinition;
 use crate::{
     graph::{InputObjectDefinition, TypeDefinition},
     schema::TypeSpec,
+    ScalarTypeMap,
 };
 
 use crate::graph::GraphReader;
@@ -40,7 +41,10 @@ impl<'a> InputObjects<'a> {
             .flat_map(|object| object.fields().map(|field| field.ty().name()))
     }
 
-    pub fn processed_objects(&self) -> Vec<crate::output::InputObject<'a>> {
+    pub fn processed_objects(
+        &self,
+        scalar_types: &ScalarTypeMap,
+    ) -> Vec<crate::output::InputObject<'a>> {
         self.objects
             .iter()
             .map(|object| crate::output::InputObject {
@@ -51,6 +55,7 @@ impl<'a> InputObjects<'a> {
                         let inner_type = field.ty().name();
                         let needs_boxed = self.recursive_objects.contains(inner_type);
                         let requires_lifetime = self.objects_with_lifetime.contains(inner_type);
+                        let scalar_override = scalar_types.get(inner_type).map(|s| s.as_str());
                         crate::output::InputObjectField {
                             schema_field: field,
                             type_spec: TypeSpec::for_input_field(
@@ -58,6 +63,7 @@ impl<'a> InputObjects<'a> {
                                 object.is_one_of().then_some(false),
                                 needs_boxed,
                                 requires_lifetime,
+                                scalar_override,
                             ),
                         }
                     })
@@ -196,7 +202,7 @@ mod tests {
     use {
         super::*,
         crate::{add_builtins, graph::Graph},
-        cynic_parser::{TypeSystemDocument, type_system::ids::FieldDefinitionId},
+        cynic_parser::{type_system::ids::FieldDefinitionId, TypeSystemDocument},
         std::sync::LazyLock,
     };
 

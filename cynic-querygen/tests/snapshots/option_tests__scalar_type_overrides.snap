@@ -1,0 +1,23 @@
+---
+source: cynic-querygen/tests/option-tests.rs
+expression: "generator.generate(query).expect(\"QueryGen Failed\")"
+---
+#[derive(cynic::QueryVariables, Debug)]
+pub struct MyQueryVariables {
+    pub id: my_crate::Uuid,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+#[cynic(graphql_type = "Foo", variables = "MyQueryVariables")]
+pub struct MyQuery {
+    #[arguments(id: $id)]
+    pub bar: Option<Bar>,
+}
+
+#[derive(cynic::QueryFragment, Debug)]
+pub struct Bar {
+    pub id: my_crate::Uuid,
+    pub name: Option<String>,
+}
+
+
